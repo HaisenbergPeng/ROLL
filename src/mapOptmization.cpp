@@ -658,14 +658,7 @@ public:
     {
         cout<<" DO gtsam optimization here"<<endl;
         TicToc t_merge;
-<<<<<<< HEAD
         int priorNode = 0;
-=======
-        int backTracing = 10;
-        int priorNode = startTemporaryMappingIndex - backTracing;
-        if (priorNode < 0 ) priorNode = 0;
-
->>>>>>> 4d3656d9ce7911c462418e064c05200079a7e96b
         // gtsam
         NonlinearFactorGraph gtSAMgraphTM;
         Values initialEstimateTM;
@@ -855,13 +848,10 @@ public:
 
     void gtHandler(const nav_msgs::Odometry::ConstPtr& gtMsg)
     {
-<<<<<<< HEAD
         if (isnan(gtMsg->pose.pose.position.x) || isnan(gtMsg->pose.pose.position.y) || isnan(gtMsg->pose.pose.position.z))
         {
             return;
         }
-=======
->>>>>>> 4d3656d9ce7911c462418e064c05200079a7e96b
         Eigen::Affine3f trans_body_to_map,trans_lidar_to_map;
         odometryMsgToAffine3f(*gtMsg, trans_body_to_map);
         // // use raw, motion-skewed clouds
@@ -1687,12 +1677,8 @@ public:
                 }
 
                 printTrans("Initial: ",transformTobeMapped);
-<<<<<<< HEAD
                 // tryReloc = true;           
                 relocSuccess = true; // only apply to bag testing     
-=======
-                tryReloc = true;                
->>>>>>> 4d3656d9ce7911c462418e064c05200079a7e96b
             }
             return;          
         }
@@ -1845,7 +1831,6 @@ public:
                 LM.getTransformation(transformTobeMapped);
             }
 
-<<<<<<< HEAD
             // // for relocalization in loc mode: only needed when used in actual world
             // if (LM.inlier_ratio > 0.4 && tryReloc == true)
             // {
@@ -1860,24 +1845,6 @@ public:
                 // for entering TMM: 
                 //inlier_ratio2 is more sensitive to map extension, and suffice
                 if ( LM.inlier_ratio2 < startTemporaryMappingInlierRatioThre && temporaryMappingMode == false)
-=======
-            // for relocalization in loc mode: only needed when used in actual world
-            if (LM.inlier_ratio > 0.4 && tryReloc == true)
-            {
-                ROS_INFO_STREAM("At time "<< cloudInfoTime - rosTimeStart <<" sec, relocalization succeeds!");
-                relocSuccess = true;
-                tryReloc = false;
-                transformUpdate(); // for giving fusion pose immediate map_odom
-            }
-
-            if (relocSuccess == true && localizationMode == true)
-            {
-
-                // for entering TMM: 
-                //inlier_ratio2 is more sensitive to map extension
-                // inlier_ratio is more for scene change
-                if ( (LM.inlier_ratio2 < startTemporaryMappingInlierRatioThre) && temporaryMappingMode == false)
->>>>>>> 4d3656d9ce7911c462418e064c05200079a7e96b
                 {
                     ROS_INFO_STREAM("At time "<< cloudInfoTime - rosTimeStart <<" sec, Entering temporary mapping mode due to poor mapping performace");
                     ROS_INFO_STREAM("Inlier ratio: "<< LM.inlier_ratio<< "Inlier ratio2: "<< LM.inlier_ratio2);                        
@@ -1886,10 +1853,7 @@ public:
                     frameTobeAbandoned = true;
                     TMMcount++;
                 }
-<<<<<<< HEAD
                 
-=======
->>>>>>> 4d3656d9ce7911c462418e064c05200079a7e96b
                 // more strict to exit TMM for map updating
                 if (LM.inlier_ratio2 > exitTemporaryMappingInlierRatioThre && int(temporaryCloudKeyPoses3D->size()) > slidingWindowSize + 10 && temporaryMappingMode == true)
                 {

@@ -3,13 +3,8 @@ kloam:
   saveKeyframeMap: true 
   savePose: true # for path recording purposes /reloc gt, save it to saveMapDirectory
   savePCD: true
-<<<<<<< HEAD
   saveMapDirectory:  "/media/binpeng/BIGLUCK/Datasets/NCLT/datasets/2012-01-08/MAP/map_pcd"           
   saveKeyframeMapDirectory: "/media/binpeng/BIGLUCK/Datasets/NCLT/datasets/2012-01-08/MAP/keyframes"
-=======
-  saveMapDirectory:  "/media/binpeng/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-01-15-gt/map_pcd"           
-  saveKeyframeMapDirectory: "/media/binpeng/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-01-15-gt/keyframes"
->>>>>>> 4d3656d9ce7911c462418e064c05200079a7e96b
   
   saveRawCloud: false
   saveMatchingError: false

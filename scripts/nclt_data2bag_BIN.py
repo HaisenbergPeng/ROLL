@@ -29,11 +29,7 @@ from math import sin,cos
 from tqdm import tqdm
 # import scipy
 
-<<<<<<< HEAD
 record_time = '2012-01-08'
-=======
-record_time = '2012-05-11'
->>>>>>> 4d3656d9ce7911c462418e064c05200079a7e96b
 root_dir = '/media/binpeng/BIGLUCK/Datasets/NCLT/datasets'
 save_dir = '/media/binpeng/BIGLUCK/Datasets/NCLT/datasets'
 ms25_filename = os.path.join(root_dir, record_time,record_time,'ms25.csv')
@@ -286,11 +282,7 @@ def write_gt():
     print('Converting ground truth......')
     # add covariance
     pose_gt = np.loadtxt(gt_filename, delimiter = ",")
-<<<<<<< HEAD
     # cov = np.loadtxt(gt_cov_filename, delimiter = ",")
-=======
-    cov = np.loadtxt(gt_cov_filename, delimiter = ",")
->>>>>>> 4d3656d9ce7911c462418e064c05200079a7e96b
 
     # t_cov = cov[:, 0]
     # # Note: Interpolation is not needed, this is done as a convenience

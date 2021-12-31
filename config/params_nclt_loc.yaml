@@ -5,17 +5,10 @@ kloam:
   savePose: true # for path recording purposes /reloc gt, save it to saveMapDirectory
   saveMatchingError: true
   mapUpdateEnabled: true
-<<<<<<< HEAD
   saveMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-04-29/map_pcd          
   saveKeyframeMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-04-29/keyframes 
   loadKeyframeMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-03-17/keyframes
   # loadKeyframeMapDirectory: /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-01-15-gt/keyframes
-=======
-  saveMapDirectory:  /media/binpeng/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-03-17/map_pcd          
-  saveKeyframeMapDirectory:  /media/binpeng/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-03-17/keyframes 
-  loadKeyframeMapDirectory:  /media/binpeng/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-02-02/keyframes
-  # loadKeyframeMapDirectory:  /media/binpeng/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-01-15-gt/keyframes
->>>>>>> 4d3656d9ce7911c462418e064c05200079a7e96b
 
   saveRawCloud: false
   # temporary mapping mode
@@ -29,7 +22,6 @@ kloam:
   longi0: -83.709657
 
   # initialGuess: [-0.023064531, 0.006521815, -0.123438711, 75.34987256, 108.1539385, -3.290657831] # 20120115
-<<<<<<< HEAD
   # initialGuess: [-0.017984725855664, 0.012800135555456, -0.239421644654498,  75.520827533362393, 108.443935840162752, -3.291299069412723] # 20120202
   # initialGuess: [0.020559761872303, -0.000903047757892, -1.070181276478803, 75.579787639477303, 108.841026421505774, -3.316757230658669] # 20120317
   initialGuess: [-0.015404291345797, -0.000618447067820, -0.312421191243955, 76.181700539534063, 108.837027977442645, -3.266038226333669] # 20120429
@@ -39,18 +31,6 @@ kloam:
   # initialGuess: [-0.006278876, -0.001990931, -0.460840165,76.08323025, 109.5430329, -3.29033493] # 20120928
   # initialGuess: [ 0.004682509800383, 0.028480666632129, -0.634307081390563,76.505824066971385, 108.313730319190057, -3.255910820978710] # 20130405
   # initialGuess: [-0.008147915131152, -0.005539851055795, -0.519660742617843,78.049790086599444, 108.998587625038923, -3.169731476591604] #20130223
-=======
-  initialGuess: [-0.017984725855664, 0.012800135555456, -0.239421644654498,  75.520827533362393, 108.443935840162752, -3.291299069412723] # 20120202
-  # initialGuess: [-0.076900630455742, -0.035044911386992, -0.003181013984940, -3.203045425982298, -10.919418970861985, 1.109503103575354] # 20120212
-  # initialGuess: [0.044139865890891, -0.042063407506320, -0.242871482108565,88.000997589685227, 100.282235687937074, -2.784302894915952] #20120218
-  # initialGuess: [0.020559761872303, -0.000903047757892, -1.070181276478803, 75.579787639477303, 108.841026421505774, -3.316757230658669] # 20120317
-  # initialGuess: [-0.015404291345797, -0.000618447067820, -0.312421191243955, 76.181700539534063, 108.837027977442645, -3.266038226333669] # 20120429
-  # initialGuess: [0.019280939, 0.004926005, -1.755148225, -1.126196628, -3.182984251, 0.737359681] #20120511
-  # initialGuess: [-0.006278876, -0.001990931, -0.460840165,76.08323025, 109.5430329, -3.29033493] # 20120928
-  # initialGuess: [0.00468251, 0.028480667, -0.634307081, 76.50582407, 108.3137303, -3.255910821] # 20130422
-  # initialGuess: [-0.008147915131152, -0.005539851055795, -0.519660742617843, 78.0497900, 108.998587625038923, -3.169731476591604] # 20130223
-
->>>>>>> 4d3656d9ce7911c462418e064c05200079a7e96b
   # Visualization
   globalMapVisualizationSearchRadius: 1000.0    # meters, global map visualization radius(index would overflow if too big)
   globalMapVisualizationPoseDensity: 10.0       # 10 by default, meters, global map visualization keyframe density

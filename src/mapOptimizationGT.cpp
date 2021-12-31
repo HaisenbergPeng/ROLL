@@ -721,11 +721,8 @@ public:
             int keyframeNDS = cloudKeyPoses3DDS->size();
             cout<<"There are "<<keyframeNDS<<" keyframes after downsampling"<<endl;
             ofstream pose_file;
-<<<<<<< HEAD
             pose_file.setf(ios::fixed, ios::floatfield);  // 设定为 fixed 模式，以小数点表示浮点数
             pose_file.precision(6); // 固定小数位6
-=======
->>>>>>> 4d3656d9ce7911c462418e064c05200079a7e96b
             pose_file.open(saveKeyframeMapDirectory+"/poses.txt",ios::out); // downsampled
             if(!pose_file.is_open())
             {
@@ -745,11 +742,7 @@ public:
                 pt.intensity = cloudKeyPoses6D->points[keyframeSearchIdx[0]].intensity;  
                 pcl::io::savePCDFileBinary(saveKeyframeMapDirectory + "/corner" + std::to_string(i)+".pcd", *cornerCloudKeyFrames[pt.intensity]);
                 pcl::io::savePCDFileBinary(saveKeyframeMapDirectory + "/surf" + std::to_string(i)+".pcd", *surfCloudKeyFrames[pt.intensity]);
-<<<<<<< HEAD
                 pose_file<<cloudKeyPoses6D->points[pt.intensity].time<<" "<<cloudKeyPoses6D->points[pt.intensity].x<<" "<<cloudKeyPoses6D->points[pt.intensity].y<<" "<<cloudKeyPoses6D->points[pt.intensity].z
-=======
-                pose_file<<cloudKeyPoses6D->points[pt.intensity].x<<" "<<cloudKeyPoses6D->points[pt.intensity].y<<" "<<cloudKeyPoses6D->points[pt.intensity].z
->>>>>>> 4d3656d9ce7911c462418e064c05200079a7e96b
                 <<" "<<cloudKeyPoses6D->points[pt.intensity].roll<<" "<<cloudKeyPoses6D->points[pt.intensity].pitch<<" "<<cloudKeyPoses6D->points[pt.intensity].yaw
                 << " " << i<<" "<<isIndoorKeyframe[pt.intensity]<<"\n";
                 i++;
