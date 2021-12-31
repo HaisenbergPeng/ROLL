@@ -1,0 +1,27 @@
+<launch>
+
+    <arg name="project" default="kloam"/>
+    <!-- <param name="use_sim_time" value="true"/> -->
+    <!-- EKF GPS-->
+    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_gps" respawn="true">
+        <!-- <remap from="odometry/filtered" to="odometry/navsat" /> -->
+        <rosparam command="load" file="$(find kloam)/config/ekf.yaml" />
+    </node>
+
+    <!-- Navsat -->
+    <!-- datum latitude,longitude, altitude -->
+    <node pkg="robot_localization" type="navsat_transform_node" name="navsat" respawn="true">
+        <rosparam command="load" file="$(find kloam)/config/navsat.yaml"/>
+        <rosparam param="datum">[-33.889723, 151.1927187,46.069, world, base_link]</rosparam>
+        <remap from="imu/data" to="/vn100/imu" />  
+        <remap from="gps/fix" to="/ublox_gps/fix" />
+        <!-- <remap from="odometry/filtered" to="odometry/navsat" /> -->
+    </node>
+
+    <!-- args: x y z yaw pitch roll, so R = Rz(yaw)Ry(pitch)Rx(roll) -->
+    <!-- tf is published inside the usyd bad -->
+    <!-- <node pkg="tf" type="static_transform_publisher" name="gps_transform" args="0.287 0.358 1.415 0 0 0 base_link gps 10"/>
+    <node pkg="tf" type="static_transform_publisher" name="imu_transform" args="0.517 0 0.255 0 0 0 base_link imu 100"/> -->
+    <node pkg="tf" type="static_transform_publisher" name="lidar_transform" args="-1.024 0 -1.506 0 -0.122 0 lidar_link base_link 100"/>
+    
+</launch>

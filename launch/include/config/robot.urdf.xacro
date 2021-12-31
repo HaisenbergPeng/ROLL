@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<robot name="lio" xmlns:xacro="http://tixiaoshan.github.io/">
+  <xacro:property name="PI" value="3.1415926535897931" />
+
+  <!-- map->lidar->baselink->... -->
+  <link name="lidar_link"></link>
+
+     <link name="base_link"></link>
+  <joint name="link_joint" type="fixed">
+    <parent link="lidar_link"/>
+    <child link="base_link" />
+    <origin xyz="0 0 0" rpy="0 0 0" /> 
+  </joint>
+
+
+  
+  <link name="base_footprint"></link>
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="base_footprint" />
+    <origin xyz="0 0 0" rpy="0 0 0" />
+  </joint>
+
+
+  <link name="imu_link"> </link>
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link" />
+    <child link="imu_link" />
+    <origin xyz="0 0 0" rpy="0 0 0" />
+  </joint>
+
+  <link name="navsat_link"> </link>
+  <joint name="navsat_joint" type="fixed">
+    <parent link="base_link" />
+    <child link="navsat_link" />
+    <origin xyz="0 0 0" rpy="0 0 0" />
+  </joint>
+
+</robot>

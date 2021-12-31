@@ -1,0 +1,5 @@
+float32 resolutionMap
+float32 resPoseIndoor
+float32 resPoseOutdoor
+---
+bool success

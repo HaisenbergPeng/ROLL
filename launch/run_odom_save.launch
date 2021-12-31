@@ -1,0 +1,7 @@
+<launch>
+
+    <arg name="project" default="kloam"/>
+    <!-- cannot use argv[1] abadoned -->
+    <node pkg="kloam" type = "odom_save_node" name = "odom_save_node" output = "screen"/>
+
+</launch>

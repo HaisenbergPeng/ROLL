@@ -1,0 +1,22 @@
+<launch>
+
+    <arg name="project" default="kloam"/>
+    
+    <!-- Parameters -->
+    <rosparam file="$(find kloam)/config/params_nclt_loc_surf_only.yaml" command="load" />
+
+    <!--- LOAM -->
+    <node pkg="$(arg project)" type="$(arg project)_scanRegistration"     name="$(arg project)_scanRegistration"      output="screen"     required="true"/>
+    <node pkg="$(arg project)" type="$(arg project)_lidarOdometry"      name="$(arg project)_lidarOdometry"       output="screen"     respawn ="true"/>
+    <node pkg="$(arg project)" type="$(arg project)_mapOptmizationSurfOnly"      name="$(arg project)_mapOptmization_surf_only"       output="screen"     required="true"/>
+
+    <!--- Robot State TF -->
+    <include file="$(find kloam)/launch/include/module_robot_state_publisher.launch" />
+
+    <!--- Run Navsat -->
+    <!-- <include file="$(find kloam)/launch/include/module_navsat.launch" /> -->
+
+    <!--- Run Rviz-->
+    <include file="$(find kloam)/launch/include/module_rviz.launch" />
+
+</launch>

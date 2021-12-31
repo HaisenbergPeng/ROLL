@@ -1,0 +1,20 @@
+<launch>
+
+    <arg name="project" default="kloam"/>
+    <param name="use_sim_time" value="true" /> 
+    <!-- Parameters -->
+    <rosparam file="$(find kloam)/config/params_usyd_mapping.yaml" command="load" />
+    <!--- LOAM -->
+    <include file="$(find kloam)/launch/include/module_loam.launch" />
+
+
+    <!--- Run Rviz-->
+    <include file="$(find kloam)/launch/include/module_rviz.launch" />
+
+    <node pkg="tf" type="static_transform_publisher" name="map2odom" args="0 0 0 0 0 0 /map /odom 100" />
+    <!-- <node pkg="tf" type="static_transform_publisher" name="lidar2base" args="0 0 0 0 0 0 /lidar_link /base_link 100" />
+    <node pkg="tf" type="static_transform_publisher" name="base2gps" args="0 0 0 0 0 0 /base_link /gps 100" /> -->
+    <!--- Robot State TF -->
+    <param name="robot_description" command="$(find xacro)/xacro $(find kloam)/launch/include/config/robot_usyd.urdf.xacro --inorder" />
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true"/>
+</launch>

@@ -1,0 +1,80 @@
+kloam:
+
+  localizationMode: false
+  saveKeyframeMap: false
+  savePCD: false 
+  savePose: false # for path recording purposes /reloc gt, save it to saveMapDirectory
+  saveMapDirectory: "/media/binpeng/BIGLUCK/Datasets/KITTI/dataset/sequences/00"           
+  saveKeyframeMapDirectory: "/media/binpeng/BIGLUCK/Datasets/KITTI/dataset/sequences/00/KLOAM/keyframes" # for relocalization
+  loadKeyframeMapDirectory: /media/binpeng/BIGLUCK/Datasets/KITTI/dataset/sequences/00/KLOAM/map_pcd"
+  saveRawCloud: false
+  # For reloc: global variables
+  mapLoaded: false
+  relocSuccess: false
+  useOdom: false  
+
+  mappingProcessInterval: 0.20                 #cannot do realtime!!! seconds, regulate mapping frequency
+    # Surrounding map
+  surroundingkeyframeAddingDistThreshold: 1.0   # 1.0 by default,meters, regulate keyframe adding threshold
+  surroundingkeyframeAddingAngleThreshold: 0.2  # 0.2 by default,radians, regulate keyframe adding threshold
+  surroundingKeyframeDensity: 2.0               # meters, downsample surrounding keyframe poses   
+  surroundingKeyframeSearchRadius: 50.0         # 20 is not okay; meters, within n meters scan-to-map optimization (when loop closure disabled)
+  # Topics
+  pointCloudTopic: "velodyne_points"               # Point cloud data
+  imuTopic: "imu/data"                         # IMU data
+  # odomTopic: "odometry/imu"                   # IMU pre-preintegration odometry, same frequency as IMU
+  odomTopic: odom
+  gpsTopic: "odometry/gps"                    # GPS odometry topic from navsat, see module_navsat.launch file
+
+  # Frames
+  lidarFrame: "lidar_link"
+  baselinkFrame: "base_link"
+  odometryFrame: "odom"
+  mapFrame: "odom"
+  # GPS Settings
+  useImuHeadingInitialization: true           # if using GPS data, set to "true"
+  useGpsElevation: false                      # if GPS elevation is bad, set to "false"
+  gpsCovThreshold: 2.0                        # m^2, threshold for using GPS data
+  poseCovThreshold: 1.0                      # m^2, threshold for using GPS data
+  
+  # KITTI HDL-64: 
+  sensor: velodyne                            # lidar sensor type, either 'velodyne' or 'ouster'
+  N_SCAN: 64                                 ## number of lidar channel (i.e., 16, 32, 64, 128)
+  Horizon_SCAN: 1800                          ## lidar horizontal resolution (Velodyne:1800, Ouster:512,1024,2048,robosense: 2000)
+  downsampleRate: 4                          # default: 1 (stressful). Downsample your data if too many points. i.e., 16 = 64 / 4, 16 = 16 / 1
+  # optIteration: 10
+  
+  lidarMinRange: 0.2                          # default: 1.0, minimum lidar range to be used
+  lidarMaxRange: 150.0                      ## default: 1000.0, maximum lidar range to be used
+
+  # LOAM feature threshold
+  edgeThreshold: 0.1
+  surfThreshold: 0.1
+  edgeFeatureMinValidNum: 10
+  surfFeatureMinValidNum: 100
+
+  # voxel filter paprams
+  odometrySurfLeafSize: 0.4                     # default: 0.4 - outdoor, 0.2 - indoor
+  mappingCornerLeafSize: 0.2                    # default: 0.2 - outdoor, 0.1 - indoor
+  mappingSurfLeafSize: 0.4                      # default: 0.4 - outdoor, 0.2 - indoor
+
+  # CPU Params
+  numberOfCores: 4                              # number of cores for mapping optimization
+
+
+  # Loop closure
+  loopClosureEnableFlag: true
+  loopClosureFrequency: 1.0                    # Hz, regulate loop closure constraint add frequency
+  surroundingKeyframeSize: 50                   # submap size (when loop closure enabled)
+  historyKeyframeSearchRadius: 15.0             # meters, key frame that is within n meters from current pose will be considerd for loop closure
+  historyKeyframeSearchTimeDiff: 30.0           # 30 by default,seconds, key frame that is n seconds older will be considered for loop closure
+  historyKeyframeSearchNum: 25                  # number of hostory key frames will be fused into a submap for loop closure
+  # 0.3 by default, but for indoor it can go wrong, actually mostly for good matches, fitnessScore is around 0.03 ;
+  #icp threshold, the smaller the better alignment
+  historyKeyframeFitnessScore: 0.2              
+
+  # Visualization
+  globalMapVisualizationSearchRadius: 1000.0    # meters, global map visualization radius(index would overflow if too big)
+  globalMapVisualizationPoseDensity: 2.0       # 10 by default, meters, global map visualization keyframe density
+  globalMapVisualizationLeafSize: 1.0           # 1 by default, meters, global map visualization cloud density
+

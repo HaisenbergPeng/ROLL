@@ -1,0 +1,24 @@
+<launch>
+
+    <arg name="project" default="kloam"/>
+    <param name="use_sim_time" value="true" />  
+    <!-- Parameters -->
+    <rosparam file="$(find kloam)/config/params_nclt_mappingGT.yaml" command="load" />
+
+    <!--- LOAM -->
+    <node pkg="$(arg project)" type="$(arg project)_scanRegistration"     name="$(arg project)_scanRegistration"      output="screen"     required="true"/>
+    <!-- <node pkg="$(arg project)" type="$(arg project)_lidarOdometry"      name="$(arg project)_lidarOdometry"       output="screen"     respawn ="true"/> -->
+    <node pkg="$(arg project)" type="$(arg project)_mapOptimizationGT"      name="$(arg project)_mapOptimizationGT"       output="screen"     required="true"/>
+
+    <include file="$(find fast_lio)/launch/mapping_nclt.launch" />
+    <!--- Robot State TF -->
+    <include file="$(find kloam)/launch/include/module_robot_state_publisher.launch" />
+
+    <!--- Run Navsat -->
+    <!-- <include file="$(find kloam)/launch/include/module_navsat.launch" /> -->
+
+    <!--- Run Rviz-->
+    <include file="$(find kloam)/launch/include/module_rviz.launch" />
+
+
+</launch>

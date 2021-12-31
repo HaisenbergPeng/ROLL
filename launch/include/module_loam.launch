@@ -1,0 +1,11 @@
+<launch>
+
+    <arg name="project" default="kloam"/>
+    
+    <node pkg="$(arg project)" type="$(arg project)_scanRegistration"     name="$(arg project)_scanRegistration"      output="screen"     required="true"/>
+    <!-- <node pkg="$(arg project)" type="$(arg project)_lidarOdometry"      name="$(arg project)_lidarOdometry"       respawn ="true"/> -->
+    <node pkg="$(arg project)" type="$(arg project)_lidarOdometry"      name="$(arg project)_lidarOdometry"       output="screen"     respawn ="true"/>
+    <node pkg="$(arg project)" type="$(arg project)_mapOptmization"      name="$(arg project)_mapOptmization"       output="screen"     required="true"/>
+    
+    
+</launch>

@@ -1,0 +1,190 @@
+kloam:
+  localizationMode: false
+  saveKeyframeMap: true # this will also save every keyframe rawcloud!
+  savePCD: true  
+  savePose: true # for path recording purposes /reloc gt, save it to saveMapDirectory
+  saveRawCloud: true # for occupancy grid generation
+  saveMapDirectory: "/media/binpeng/BIGLUCK/Datasets/LABdataset/Maps/new/map_pcd"      
+  # saveMapDirectory: "/home/binpeng/Documents/LIO-SAM/test/office_rev"      
+  saveKeyframeMapDirectory: "/media/binpeng/BIGLUCK/Datasets/LABdataset/Maps/new/keyframes" # for relocalization
+  loadKeyframeMapDirectory: "/media/binpeng/BIGLUCK/Datasets/LABdataset/Maps/new/keyframes"
+
+  
+  # For reloc: global variables
+  relocSuccess: false
+  useOdom: false
+
+  mappingProcessInterval: 0.20                 #cannot do realtime!!! seconds, regulate mapping frequency
+    # Surrounding map
+  surroundingkeyframeAddingDistThreshold: 1.0   # 1.0 by default,meters, regulate keyframe adding threshold
+  surroundingkeyframeAddingAngleThreshold: 0.2  # 0.2 by default,radians, regulate keyframe adding threshold
+  surroundingKeyframeDensity: 1.0               # 1.0 by default,meters, for both nearby keyframe extraction and keyframe saving
+  surroundingKeyframeSearchRadius: 50.0         # 20 is not okay; meters, within n meters scan-to-map optimization (when loop closure disabled)
+  
+  # Topics
+  pointCloudTopic: "velodyne_points"               # Point cloud data
+  imuTopic: "imu/data1"                         # IMU data
+  # odomTopic: "odometry/imu"                   # IMU pre-preintegration odometry, same frequency as IMU
+  odomTopic: odom
+  gpsTopic: "odometry/gps"                    # GPS odometry topic from navsat, see module_navsat.launch file
+
+  # Visualization
+  globalMapVisualizationSearchRadius: 300.0    # meters, global map visualization radius(index would overflow if too big)
+  globalMapVisualizationPoseDensity: 2.0       # 10 by default, meters, global map visualization keyframe density
+  globalMapVisualizationLeafSize: 0.2           # 1 by default, meters, global map visualization cloud density
+  
+  # Frames
+  lidarFrame: "lidar_link"
+  baselinkFrame: "base_link"
+  odometryFrame: "odomLIO"
+  mapFrame: "map"
+
+  # GPS Settings
+  useImuHeadingInitialization: true           # if using GPS data, set to "true"
+  useGpsElevation: false                      # if GPS elevation is bad, set to "false"
+  gpsCovThreshold: 2.0                        # m^2, threshold for using GPS data
+  poseCovThreshold: 1.0                      # m^2, threshold for using GPS data
+  
+
+  # robosense lidar settings
+  sensor: velodyne                            # lidar sensor type, either 'velodyne' or 'ouster'
+  N_SCAN: 32                                 ## number of lidar channel (i.e., 16, 32, 64, 128)
+  Horizon_SCAN: 1800                          ## lidar horizontal resolution (Velodyne:1800, Ouster:512,1024,2048,robosense: 2000)
+  downsampleRate: 1                           # default: 1. Downsample your data if too many points. i.e., 16 = 64 / 4, 16 = 16 / 1
+  
+  lidarMinRange: 0.2                          # default: 1.0, minimum lidar range to be used
+  lidarMaxRange: 150.0                      ## default: 1000.0, maximum lidar range to be used
+  
+  # LOAM feature threshold
+  edgeThreshold: 0.1 # changed the way getting smoothness
+  surfThreshold: 0.1
+  edgeFeatureMinValidNum: 10
+  surfFeatureMinValidNum: 100
+
+  # voxel filter paprams
+  odometrySurfLeafSize: 0.2                     # default: 0.4 - outdoor, 0.2 - indoor
+  mappingCornerLeafSize: 0.2                    # default: 0.2 - outdoor, 0.1 - indoor
+  mappingSurfLeafSize: 0.4                      # default: 0.4 - outdoor, 0.2 - indoor
+
+  # robot motion constraint (in case you are using a 2D robot)
+  z_tollerance: 1000                            # meters
+  rotation_tollerance: 1000                     # radians
+
+  # CPU Params
+  numberOfCores: 4                              # number of cores for mapping optimization
+
+
+  # Loop closure
+  loopClosureEnableFlag: true
+  loopClosureFrequency: 1.0                    # Hz, regulate loop closure constraint add frequency
+  surroundingKeyframeSize: 50                   # submap size (when loop closure enabled)
+  historyKeyframeSearchRadius: 15.0             # meters, key frame that is within n meters from current pose will be considerd for loop closure
+  historyKeyframeSearchTimeDiff: 30.0           # 30 by default,seconds, key frame that is n seconds older will be considered for loop closure
+  historyKeyframeSearchNum: 25                  # number of hostory key frames will be fused into a submap for loop closure
+  # 0.3 by default, but for indoor it can go wrong, actually mostly for good matches, fitnessScore is around 0.03 ;
+  #icp threshold, the smaller the better alignment
+  historyKeyframeFitnessScore: 0.2              
+
+
+# Navsat (convert GPS coordinates to Cartesian)
+# where are they used?
+navsat:
+  frequency: 50
+  wait_for_datum: false
+  delay: 0.0
+  magnetic_declination_radians: 0
+  yaw_offset: 0
+  zero_altitude: true
+  broadcast_utm_transform: false
+  broadcast_utm_transform_as_parent_frame: false
+  publish_filtered_gps: false
+
+# EKF for Navsat
+ekf_gps:
+  publish_tf: false
+  map_frame: map
+  odom_frame: odom
+  base_link_frame: base_link
+  world_frame: odom
+
+  frequency: 50
+  two_d_mode: false
+  sensor_timeout: 0.01
+  # -------------------------------------
+  # External IMU:
+  # -------------------------------------
+  imu0: imu/data
+  # make sure the input is aligned with ROS REP105. "imu_correct" is manually transformed by myself. EKF can also transform the data using tf between your imu and base_link
+  imu0_config: [false, false, false,
+                false, false, false,
+                false, false, false,
+                true, true, true,
+                true,  true,  true]
+  imu0_differential: false
+  imu0_queue_size: 50 
+  imu0_remove_gravitational_acceleration: true
+
+  # # -------------------------------------
+  # # mapping/odometry:
+  # # -------------------------------------
+  odom1: mapping/odometry
+  # make sure the input is aligned with ROS REP105. "imu_correct" is manually transformed by myself. EKF can also transform the data using tf between your imu and base_link
+  odom1_config: [false, false, false,
+                true,  true,  true,
+                false, false, false,
+                false, false, false,
+                 false, false, false]
+  odom1_differential: false
+  odom1_queue_size: 10
+
+  # -------------------------------------
+  # Odometry (From Navsat):
+  # -------------------------------------
+  odom0: odometry/gps
+  odom0_config: [true,  true,  true,
+                 false, false, false,
+                 false, false, false,
+                 false, false, false,
+                 false, false, false]
+  odom0_differential: false
+  odom0_queue_size: 10
+
+  #                            x     y     z     r     p     y   x_dot  y_dot  z_dot  r_dot p_dot y_dot x_ddot y_ddot z_ddot
+  process_noise_covariance: [  1.0,  0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,    0,    0,      0,
+                               0,    1.0,  0,    0,    0,    0,    0,     0,     0,     0,    0,    0,    0,    0,      0,
+                               0,    0,    10.0, 0,    0,    0,    0,     0,     0,     0,    0,    0,    0,    0,      0,
+                               0,    0,    0,    0.03, 0,    0,    0,     0,     0,     0,    0,    0,    0,    0,      0,
+                               0,    0,    0,    0,    0.03, 0,    0,     0,     0,     0,    0,    0,    0,    0,      0,
+                               0,    0,    0,    0,    0,    0.1,  0,     0,     0,     0,    0,    0,    0,    0,      0,
+                               0,    0,    0,    0,    0,    0,    0.25,  0,     0,     0,    0,    0,    0,    0,      0,
+                               0,    0,    0,    0,    0,    0,    0,     0.25,  0,     0,    0,    0,    0,    0,      0,
+                               0,    0,    0,    0,    0,    0,    0,     0,     0.04,  0,    0,    0,    0,    0,      0,
+                               0,    0,    0,    0,    0,    0,    0,     0,     0,     0.01, 0,    0,    0,    0,      0,
+                               0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0.01, 0,    0,    0,      0,
+                               0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0.5,  0,    0,      0,
+                               0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,    0.01, 0,      0,
+                               0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,    0,    0.01,   0,
+                               0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,    0,    0,      0.015]
+
+                                 # For DBow3
+  generateVocab: true
+  # For scan context
+  saveNodeRawCloudDirectory: /home/binpeng/Documents/LIO-SAM/maps/office/scanContext
+
+  LIDAR_HEIGHT: 2.0
+  PC_NUM_RING: 20
+  PC_NUM_SECTOR: 60
+  PC_MAX_RADIUS: 20.0 #indoor 20, outdoor 80
+  loopClosingInterval: 3
+  euclideanLC: true
+  SC_DIST_THRES: 0.1
+
+  # For range mat
+  keypointCornerNum: 50
+  keypointSurfaceNum: 450
+  keypointSize: 5 # for 16 line lidar
+  bitSize: 32
+
+  # multi-layer rangemat
+  layerNum: 10
+  mlMAX_RADIUS: 30
