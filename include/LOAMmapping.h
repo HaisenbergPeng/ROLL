@@ -8,7 +8,7 @@ class LOAMmapping : public ParamServer
         float transformTobeMapped[6];
         float transformGuess[6];
     public: 
-        Eigen::Affine3f affine_lidar_to_map;
+        Eigen::Affine3f affine_out;
         pcl::KdTreeFLANN<PointType>::Ptr kdtreeCornerFromMap;
         pcl::KdTreeFLANN<PointType>::Ptr kdtreeSurfFromMap;
         pcl::PointCloud<PointType>::Ptr lidarCloudCornerLastDS;
@@ -63,10 +63,10 @@ class LOAMmapping : public ParamServer
 
             lidarCloudCornerLastDSNum = lidarCloudCornerLastDS->points.size();
             lidarCloudSurfLastDSNum = lidarCloudSurfLastDS->points.size();
-            affine_lidar_to_map = affine_guess_new;
+            affine_out = affine_guess_new;
 
-            Affine3f2Trans(affine_lidar_to_map, transformTobeMapped);
-            Affine3f2Trans(affine_lidar_to_map, transformGuess);
+            Affine3f2Trans(affine_out, transformTobeMapped);
+            Affine3f2Trans(affine_out, transformGuess);
 
             lidarCloudOri.reset(new pcl::PointCloud<PointType>());
             coeffSel.reset(new pcl::PointCloud<PointType>());
@@ -132,7 +132,7 @@ class LOAMmapping : public ParamServer
 
     void cornerOptimization(int iterCount)
     {
-        affine_lidar_to_map = trans2Affine3f(transformTobeMapped);
+        affine_out = trans2Affine3f(transformTobeMapped);
 
         // #pragma omp parallel for num_threads(numberOfCores) // runtime error, don't use it!
         for (int i = 0; i < lidarCloudCornerLastDSNum; i++)
@@ -225,7 +225,7 @@ class LOAMmapping : public ParamServer
 
     void surfOptimization(int iterCount)
     {
-        affine_lidar_to_map = trans2Affine3f(transformTobeMapped);
+        affine_out = trans2Affine3f(transformTobeMapped);
 
         for (int i = 0; i < lidarCloudSurfLastDSNum; i++)
         {
@@ -493,9 +493,9 @@ class LOAMmapping : public ParamServer
 
     void pointAssociateToMap(PointType const * const pi, PointType * const po)
     {
-        po->x = affine_lidar_to_map(0,0) * pi->x + affine_lidar_to_map(0,1) * pi->y + affine_lidar_to_map(0,2) * pi->z + affine_lidar_to_map(0,3);
-        po->y = affine_lidar_to_map(1,0) * pi->x + affine_lidar_to_map(1,1) * pi->y + affine_lidar_to_map(1,2) * pi->z + affine_lidar_to_map(1,3);
-        po->z = affine_lidar_to_map(2,0) * pi->x + affine_lidar_to_map(2,1) * pi->y + affine_lidar_to_map(2,2) * pi->z + affine_lidar_to_map(2,3);
+        po->x = affine_out(0,0) * pi->x + affine_out(0,1) * pi->y + affine_out(0,2) * pi->z + affine_out(0,3);
+        po->y = affine_out(1,0) * pi->x + affine_out(1,1) * pi->y + affine_out(1,2) * pi->z + affine_out(1,3);
+        po->z = affine_out(2,0) * pi->x + affine_out(2,1) * pi->y + affine_out(2,2) * pi->z + affine_out(2,3);
         po->intensity = pi->intensity;
     }
 

@@ -2,9 +2,11 @@ clc;
 clear;
 close all
 folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping";
-date = "2012-01-15";
+% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/updated_map_newInlier";
+date = "2012-08-04";
 logFilePath = folder+"/"+date+"/map_pcd/mappingError.txt";
 poseFilePath = folder+"/"+date+"/map_pcd/path_mapping.txt";
+% poseFilePath = folder+"/"+date+"/map_pcd/path_fusion.txt";
 gtFilePath = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/"+date+"/groundtruth_"+date+".csv";
 
 %% log file reading
@@ -58,12 +60,21 @@ MDtimeGT = KDTreeSearcher(timeGT);
 [idx, D] = rangesearch(MDtimeGT,timePose,0.05);
 ateError = zeros(lenPose,1);
 not_found = 0;
+
+%% kloam+fastlio uses imu pose, so here convert body pose to imu pose
+tbi = [-0.11 -0.18 -0.71]';
+
 for i=1:lenPose
     if isempty(idx{i})
         not_found = not_found + 1;
         continue;    
     end
-    ateError(i) = norm(matPose(i,2:3)-matGT(idx{i}(1),2:3));
+    %% convert gt body to gt imu
+    transGTmb = matGT(idx{i}(1),:);
+    Rmb = eul2rotm([transGTmb(7),transGTmb(6),transGTmb(5)],"ZYX");
+    tmb = transGTmb(2:4)';
+    tmi = Rmb*tbi +tmb;
+    ateError(i) = norm(matPose(i,2:3)-tmi(1:2)');
 end
 idxOver1m = find(ateError> 1.0);
 %% PLOT
@@ -76,11 +87,12 @@ plot(timeLog,regiError);
 plot(timePose-timePose(1),ateError);
 xlabel("Time (sec)");
 ylabel("Absolute trajectory error (m)");
-saveas(1,date + "ate_error.jpg");
+% saveas(1,date + "_ate_error.jpg");
 
 
 figure(2)
-plot(matPose(:,2),matPose(:,3),".");
+% plot(matPose(:,2),matPose(:,3),".");
+plot(matPose(:,2),matPose(:,3));
 hold on
 plot(matGT(:,2),matGT(:,3));
 plot(matPose(idxOver1m,2),matPose(idxOver1m,3),"*");

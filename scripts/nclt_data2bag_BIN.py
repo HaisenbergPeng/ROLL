@@ -29,9 +29,9 @@ from math import sin,cos
 from tqdm import tqdm
 # import scipy
 
-record_time = '2012-01-08'
-root_dir = '/media/binpeng/BIGLUCK/Datasets/NCLT/datasets'
-save_dir = '/media/binpeng/BIGLUCK/Datasets/NCLT/datasets'
+record_time = '2013-02-23'
+root_dir = '/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets'
+save_dir = '/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets'
 ms25_filename = os.path.join(root_dir, record_time,record_time,'ms25.csv')
 ms25E_filename = os.path.join(root_dir, record_time,record_time,'ms25_euler.csv')
 gps_filename = os.path.join(root_dir, record_time,record_time,'gps_rtk.csv')

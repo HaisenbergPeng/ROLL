@@ -110,7 +110,7 @@ public:
     bool doneSavingMap = false;
 
     Eigen::Affine3f affine_lidar_to_odom; // convert points in lidar frame to odom frame
-    Eigen::Affine3f affine_lidar_to_map;
+    Eigen::Affine3f affine_imu_to_map;
     Eigen::Affine3f affine_odom_to_map;
 
     vector<vector<double>> mappingLogs;
@@ -336,7 +336,7 @@ public:
         trans_gps_to_body = pcl::getTransformation(-0.24, 0,-1.24, 0,0,0);
         trans_lidar_to_imu = trans_imu_to_body.inverse()*trans_lidar_to_body;
 
-        affine_lidar_to_map = Eigen::Affine3f::Identity();
+        affine_imu_to_map = Eigen::Affine3f::Identity();
         affine_lidar_to_odom = Eigen::Affine3f::Identity();
         affine_odom_to_map = Eigen::Affine3f::Identity();
         correctedPose = Eigen::Affine3f::Identity();
@@ -384,7 +384,7 @@ public:
         tf::Quaternion tfQ(msgIn.pose.pose.orientation.x,msgIn.pose.pose.orientation.y,msgIn.pose.pose.orientation.z,msgIn.pose.pose.orientation.w);
         double roll,pitch,yaw;
         tf::Matrix3x3(tfQ).getRPY(roll,pitch,yaw);
-        // think about why not update affine_lidar_to_odom and affine_lidar_to_map here!!!
+        // think about why not update affine_lidar_to_odom and affine_imu_to_map here!!!
         trans = pcl::getTransformation(msgIn.pose.pose.position.x,
         msgIn.pose.pose.position.y,msgIn.pose.pose.position.z, float(roll),float(pitch),float(yaw));
 
@@ -430,9 +430,9 @@ public:
         Affine3f2Trans(affine_lidar_to_odom_tmp, odomTmp);
         // cout<<"odom message: "<<odomTmp[3]<<" "<< odomTmp[4]<<endl;
         // high-frequency publish
-        Eigen::Affine3f affine_lidar_to_map_tmp = affine_odom_to_map*affine_lidar_to_odom_tmp;
+        Eigen::Affine3f affine_imu_to_map_tmp = affine_odom_to_map*affine_lidar_to_odom_tmp;
         float array_lidar_to_map[6];
-        Affine3f2Trans(affine_lidar_to_map_tmp, array_lidar_to_map);
+        Affine3f2Trans(affine_imu_to_map_tmp, array_lidar_to_map);
         tf::Quaternion q = tf::createQuaternionFromRPY(array_lidar_to_map[0],array_lidar_to_map[1],array_lidar_to_map[2]);
         // cout<<"map message: "<<array_lidar_to_map[3]<<" "<< array_lidar_to_map[4]<<endl;
         nav_msgs::Odometry odomAftMapped;
@@ -482,7 +482,7 @@ public:
         static bool init_flag = true;
         if (init_flag==true)
         {
-            H_init = affine_lidar_to_map_tmp;
+            H_init = affine_imu_to_map_tmp;
             init_flag=false;
         }
         Eigen::Affine3f H_rot;
@@ -500,7 +500,7 @@ public:
                             0,1,0,0,
                             0,0,1,0,
                             0,0,0,1;
-        Eigen::Affine3f H = affine_lidar_to_map_tmp;
+        Eigen::Affine3f H = affine_imu_to_map_tmp;
         H = H_rot*H_init.inverse()*H; //to get H12 = H10*H02 , 180 rot according to z axis
         pose_kitti_vec.push_back(H);
     }
@@ -508,8 +508,8 @@ public:
     void transformUpdate()
     {
         mtx.lock();
-        affine_odom_to_map = affine_lidar_to_map*affine_lidar_to_odom.inverse();
-        // cout<<"affine_lidar_to_map "<<affine_lidar_to_map.matrix()<<endl;
+        affine_odom_to_map = affine_imu_to_map*affine_lidar_to_odom.inverse();
+        // cout<<"affine_imu_to_map "<<affine_imu_to_map.matrix()<<endl;
         // cout<<"affine_odom_to_map "<<affine_odom_to_map.matrix()<<endl;
         // // Publish TF
         // static tf::TransformBroadcaster br;
@@ -852,14 +852,14 @@ public:
         {
             return;
         }
-        Eigen::Affine3f trans_body_to_map,trans_lidar_to_map;
+        Eigen::Affine3f trans_body_to_map,trans_imu_to_map;
         odometryMsgToAffine3f(*gtMsg, trans_body_to_map);
         // // use raw, motion-skewed clouds
         // trans_lidar_to_map = trans_body_to_map*trans_lidar_to_body;
         // use deskewed, imu-centered clouds
-        trans_lidar_to_map = trans_body_to_map*trans_imu_to_body;
+        trans_imu_to_map = trans_body_to_map*trans_imu_to_body;
         float roll,pitch,yaw,x,y,z;
-        pcl::getTranslationAndEulerAngles(trans_lidar_to_map,x,y,z,roll,pitch,yaw);
+        pcl::getTranslationAndEulerAngles(trans_imu_to_map,x,y,z,roll,pitch,yaw);
         tf::Quaternion q = tf::createQuaternionFromRPY(roll,pitch,yaw);
         nav_msgs::Odometry gtMsgNew;
         gtMsgNew.header = gtMsg->header;
@@ -1648,13 +1648,14 @@ public:
         {
             //  use ground truth for initialization in both modes!
             //  use ground truth all along for building a map
-            int tryRuns = 3; // tryRuns = 0 means using initialGuess directly,sometimes gt is a bit slow!
+            int tryRuns = 3; // tryRuns = 0 means using initialGuess directly,sometimes gt is too delayed to be used!
             static int count = 0;
             if (!gpsQueue.empty() && count < tryRuns)
             {
-                odometryMsgToAffine3f(gpsQueue.front(),affine_lidar_to_map);
+                odometryMsgToAffine3f(gpsQueue.front(),affine_imu_to_map);
                 gpsQueue.pop_front();
-                Affine3f2Trans(affine_lidar_to_map,transformTobeMapped);
+                Affine3f2Trans(affine_imu_to_map,transformTobeMapped);
+                affine_odom_to_map = affine_imu_to_map*affine_lidar_to_odom.inverse();
                 for(int i=0;i<6;i++)
                 {
                     transformBeforeMapped[i] = transformTobeMapped[i];
@@ -1669,24 +1670,25 @@ public:
             }
             else
             {
-                // tired of waiting for gt, try initial guess given. But still waiting for rviz guess
+                // tired of waiting for gt, try initial guess given. 
                 ROS_WARN("Waiting for correct initial guess, probably need rviz for reloc");
                 for(int i=0;i<6;i++){
                     transformTobeMapped[i] = initialGuess[i];
                     transformBeforeMapped[i] = initialGuess[i];
                 }
-
-                printTrans("Initial: ",transformTobeMapped);
-                // tryReloc = true;           
-                relocSuccess = true; // only apply to bag testing     
+                Eigen::Affine3f affine_body_to_map = trans2Affine3f(transformTobeMapped);
+                affine_imu_to_map = affine_body_to_map*trans_imu_to_body;
+                affine_odom_to_map = affine_imu_to_map*affine_lidar_to_odom.inverse();
+                printTrans("Initial: ",transformTobeMapped); //no more waiting for rviz guess      
+                relocSuccess = true;      
             }
             return;          
         }
 
         
         float arrayTmp[6];
-        affine_lidar_to_map = affine_odom_to_map*affine_lidar_to_odom;
-        Affine3f2Trans(affine_lidar_to_map, arrayTmp);
+        affine_imu_to_map = affine_odom_to_map*affine_lidar_to_odom;
+        Affine3f2Trans(affine_imu_to_map, arrayTmp);
         
         for (int i=0;i<6;i++)                
         {
@@ -1799,7 +1801,7 @@ public:
     void scan2MapOptimization()
     {
         // update lidar_to_map!!!
-        affine_lidar_to_map = trans2Affine3f(transformTobeMapped);
+        affine_imu_to_map = trans2Affine3f(transformTobeMapped);
         // no prior map
         if (cloudKeyPoses3D->empty() && tryReloc == true)
         {
@@ -1818,7 +1820,7 @@ public:
         if (lidarCloudCornerLastDSNum > edgeFeatureMinValidNum && lidarCloudSurfLastDSNum > surfFeatureMinValidNum)
         {
             // get a copy of those clouds might lower down speed
-            LOAMmapping LM(lidarCloudCornerLastDS, lidarCloudSurfLastDS, lidarCloudCornerFromMapDS, lidarCloudSurfFromMapDS, affine_lidar_to_map);
+            LOAMmapping LM(lidarCloudCornerLastDS, lidarCloudSurfLastDS, lidarCloudCornerFromMapDS, lidarCloudSurfFromMapDS, affine_imu_to_map);
             LM.match();
             
             // only correct pose from fastlio when mapping quality is good
@@ -1827,7 +1829,7 @@ public:
             // if (temporaryMappingMode == false && LM.isDegenerate == false)  // worse
             if (temporaryMappingMode == false) 
             {
-                affine_lidar_to_map = LM.affine_lidar_to_map;
+                affine_imu_to_map = LM.affine_out;
                 LM.getTransformation(transformTobeMapped);
             }
 
@@ -1857,8 +1859,8 @@ public:
                 // more strict to exit TMM for map updating
                 if (LM.inlier_ratio2 > exitTemporaryMappingInlierRatioThre && int(temporaryCloudKeyPoses3D->size()) > slidingWindowSize + 10 && temporaryMappingMode == true)
                 {
-                    correctedPose = LM.affine_lidar_to_map;// notice: the correction cannot be simply the correction for last keyframe!
-                    affine_lidar_to_map = LM.affine_lidar_to_map;
+                    correctedPose = LM.affine_out;// notice: the correction cannot be simply the correction for last keyframe!
+                    affine_imu_to_map = LM.affine_out;
                     // LM.getTransformation(transformTobeMapped); // don't change it here, need original one as odom factor
                     goodToMergeMap = true;
                     cout<<"Now it is okay to merge the temporary map"<<endl;

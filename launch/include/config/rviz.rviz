@@ -12,8 +12,9 @@ Panels:
         - /links1/lidar1
         - /Feature Cloud1
         - /Mapping1
+        - /odometryPath1
       Splitter Ratio: 0.560000002
-    Tree Height: 437
+    Tree Height: 921
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Views
@@ -397,9 +398,9 @@ Visualization Manager:
           Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
-          Max Intensity: 29.0982723
+          Max Intensity: 30.0312729
           Min Color: 0; 0; 0
-          Min Intensity: 8.09157467
+          Min Intensity: 0.098598972
           Name: cloudProjected
           Position Transformer: XYZ
           Queue Size: 10
@@ -461,9 +462,9 @@ Visualization Manager:
           Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
-          Max Intensity: 30.0837269
+          Max Intensity: 30.0990372
           Min Color: 0; 0; 0
-          Min Intensity: 2.04720211
+          Min Intensity: 0.000244979485
           Name: Map (local_temporal)
           Position Transformer: XYZ
           Queue Size: 10
@@ -509,29 +510,6 @@ Visualization Manager:
         - Alpha: 1
           Buffer Length: 1
           Class: rviz/Path
-          Color: 85; 255; 255
-          Enabled: true
-          Head Diameter: 0.300000012
-          Head Length: 0.200000003
-          Length: 0.300000012
-          Line Style: Billboards
-          Line Width: 0.100000001
-          Name: Path (global)
-          Offset:
-            X: 0
-            Y: 0
-            Z: 0
-          Pose Color: 255; 85; 255
-          Pose Style: None
-          Radius: 0.0299999993
-          Shaft Diameter: 0.100000001
-          Shaft Length: 0.100000001
-          Topic: /kloam/mapping/path
-          Unreliable: false
-          Value: true
-        - Alpha: 1
-          Buffer Length: 1
-          Class: rviz/Path
           Color: 25; 255; 0
           Enabled: true
           Head Diameter: 0.300000012
@@ -553,29 +531,6 @@ Visualization Manager:
           Unreliable: false
           Value: true
         - Alpha: 1
-          Buffer Length: 1
-          Class: rviz/Path
-          Color: 255; 85; 255
-          Enabled: false
-          Head Diameter: 0.300000012
-          Head Length: 0.200000003
-          Length: 0.300000012
-          Line Style: Billboards
-          Line Width: 0.100000001
-          Name: Path (local)
-          Offset:
-            X: 0
-            Y: 0
-            Z: 0
-          Pose Color: 255; 85; 255
-          Pose Style: None
-          Radius: 0.0299999993
-          Shaft Diameter: 0.100000001
-          Shaft Length: 0.100000001
-          Topic: /kloam/imu/path
-          Unreliable: false
-          Value: false
-        - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
             Max Value: 10
@@ -590,7 +545,7 @@ Visualization Manager:
           Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
-          Max Intensity: 1317
+          Max Intensity: 1618
           Min Color: 0; 0; 0
           Min Intensity: 0
           Name: key_poses
@@ -688,7 +643,7 @@ Visualization Manager:
           Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
-          Max Intensity: 15
+          Max Intensity: 30
           Min Color: 0; 0; 0
           Min Intensity: 0
           Name: temporaryKeyPoses
@@ -721,7 +676,7 @@ Visualization Manager:
       Buffer Length: 1
       Class: rviz/Path
       Color: 25; 255; 0
-      Enabled: false
+      Enabled: true
       Head Diameter: 0.300000012
       Head Length: 0.200000003
       Length: 0.300000012
@@ -737,9 +692,9 @@ Visualization Manager:
       Radius: 0.0299999993
       Shaft Diameter: 0.100000001
       Shaft Length: 0.100000001
-      Topic: /kloam/lidarOdometry/laser_odom_path
+      Topic: /path
       Unreliable: false
-      Value: false
+      Value: true
     - Angle Tolerance: 0.100000001
       Class: rviz/Odometry
       Covariance:
@@ -901,25 +856,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 663.289978
+      Distance: 660.389709
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -265.549133
-        Y: -316.109528
-        Z: -0.000454881345
+        X: -311.026978
+        Y: 40.4136887
+        Z: -0.000394394476
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: -1.40479648
+      Pitch: -1.35979652
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 6.19045115
+      Yaw: 6.27045393
     Saved: ~
 Window Geometry:
   Displays:
