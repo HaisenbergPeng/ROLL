@@ -121,7 +121,4 @@ add_dependencies(${PROJECT_NAME}_lidarOdometry ${catkin_EXPORTED_TARGETS} ${PROJ
 target_link_libraries(${PROJECT_NAME}_lidarOdometry ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenMP_CXX_FLAGS} ${OpenCV_LIBS} ${CERES_LIBRARIES})
 target_compile_options(${PROJECT_NAME}_lidarOdometry PRIVATE ${OpenMP_CXX_FLAGS})
 
-# add_executable(odom_save_node src/odom_save.cpp)
-# target_link_libraries(odom_save_node ${catkin_LIBRARIES})
-
 

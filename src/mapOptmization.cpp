@@ -55,6 +55,8 @@ class mapOptimization : public ParamServer
 {
 
 public:
+    bool initSmoothing = false;
+    float maxNoDriftDist = 10.0;
     vector<Eigen::Affine3f> affineGLsliding;
     Eigen::Affine3f lastAffineGL = Eigen::Affine3f::Identity();
 
@@ -429,11 +431,14 @@ public:
         if (relocSuccess == false && localizationMode == true) return;
 
         Eigen::Affine3f affine_imu_to_odom_tmp;
-        Eigen::Affine3f affine_imu_to_odom;
-        odometryMsgToAffine3f(*msgIn, affine_imu_to_odom); 
+        Eigen::Affine3f affine_imu_to_odom_tmp1;
+        odometryMsgToAffine3f(*msgIn, affine_imu_to_odom_tmp1);
+        // // use raw, motion-skewed clouds
+        // affine_imu_to_odom_tmp =affine_imu_to_body*affine_imu_to_odom*affine_lidar_to_imu;
+        // use deskewed, imu-centered clouds
+        affine_imu_to_odom_tmp =affine_imu_to_body*affine_imu_to_odom_tmp1; 
 
-        globalEstimator.inputOdom(msgIn->header.stamp.toSec(),affine_imu_to_odom.matrix().cast<double>());
-
+        globalEstimator.inputOdom(msgIn->header.stamp.toSec(),affine_imu_to_odom_tmp.matrix().cast<double>());
         // testing fusion
         Eigen::Vector3d odomP;
         Eigen::Quaterniond odomQ;
@@ -460,10 +465,7 @@ public:
         pubPathFusionVINS.publish(globalPathFusionVINS); // before loop closure
 
 
-        // // use raw, motion-skewed clouds
-        // affine_imu_to_odom_tmp =affine_imu_to_body*affine_imu_to_odom*affine_lidar_to_imu;
-        // use deskewed, imu-centered clouds
-        affine_imu_to_odom_tmp =affine_imu_to_body*affine_imu_to_odom;
+
         float odomTmp[6];
         Affine3f2Trans(affine_imu_to_odom_tmp, odomTmp);
         // cout<<"odom message: "<<odomTmp[3]<<" "<< odomTmp[4]<<endl;
@@ -600,12 +602,12 @@ public:
 
                 lidarCloudRaw.reset(new pcl::PointCloud<PointType>()); 
                 cloudInfo = *cloudInfoMsg;
-                Eigen::Affine3f affine_imu_to_odom;
-                odometryMsgToAffine3f(*lidarOdometryMsg,affine_imu_to_odom);
+                Eigen::Affine3f tmp;
+                odometryMsgToAffine3f(*lidarOdometryMsg,tmp);
                 // // // use raw, motion-skewed clouds
                 // affine_imu_to_odom =affine_imu_to_body*affine_imu_to_odom*affine_lidar_to_imu;
                 // use deskewed, imu-centered clouds
-                affine_imu_to_odom =affine_imu_to_body*affine_imu_to_odom;
+                affine_imu_to_odom =affine_imu_to_body*tmp;
 
                 pcl::fromROSMsg(cloudInfoMsg->cloud_corner,  *lidarCloudCornerLast);
                 pcl::fromROSMsg(cloudInfoMsg->cloud_surface, *lidarCloudSurfLast);
@@ -631,7 +633,9 @@ public:
                     downsampleCurrentScan();
                     // cout<<"downsample: "<<downsample.toc()<<endl;
                     TicToc opt;
+                    
                     scan2MapOptimization();
+                    
                     // float optTime = opt.toc();
                     // cout<<"optimization: "<<optTime<<endl; // > 90% of the total time
                     
@@ -651,7 +655,7 @@ public:
                     // TicToc publish;
                     publishLocalMap();
                     publishOdometry();
-                    transformUpdate();
+                    // transformUpdate();
                     
                     frameTobeAbandoned = false;
                     // cout<<"publish: "<<publish.toc()<<endl;
@@ -991,8 +995,6 @@ public:
         else         resPoseOutdoor = 5.0;
 
 
-
-
         float mappingTime = accumulate(mappingTimeVec.begin(),mappingTimeVec.end(),0.0);
         cout<<"Average time consumed by mapping is :"<<mappingTime/mappingTimeVec.size()<<" ms"<<endl;
         if (localizationMode) cout<<"Times of entering TMM is :"<<TMMcount<<endl;
@@ -1270,11 +1272,6 @@ public:
             cloudKeyPoses3DDS->push_back(pt);
         }
          cout<<"outdoor: "<<keyPosesOutdoorDS->size()<<" frames" <<endl;
-
-
-
-        
-
     }
 
     void visualizeGlobalMapThread()
@@ -1845,8 +1842,6 @@ public:
 
     void scan2MapOptimization()
     {
-        // update lidar_to_map!!!
-        affine_imu_to_map = trans2Affine3f(transformTobeMapped);
         // no prior map
         if (cloudKeyPoses3D->empty() && tryReloc == true)
         {
@@ -1855,12 +1850,10 @@ public:
             tryReloc = false;
             return;
         }
-
         // no clouds nearby
         if (cloudKeyPoses3D->empty() || lidarCloudCornerFromMapDS->empty() || lidarCloudSurfFromMapDS->empty())
             return;
         
-
         // cout<<"corner, surf points: "<<lidarCloudCornerLastDSNum<<" "<<lidarCloudSurfLastDSNum<<endl;
         if (lidarCloudCornerLastDSNum > edgeFeatureMinValidNum && lidarCloudSurfLastDSNum > surfFeatureMinValidNum)
         {
@@ -1868,8 +1861,6 @@ public:
             LOAMmapping LM(lidarCloudCornerLastDS, lidarCloudSurfLastDS, lidarCloudCornerFromMapDS, lidarCloudSurfFromMapDS, affine_imu_to_map);
             LM.match();
             
-
-
             // // for relocalization in loc mode: only needed when used in actual world
             // if (LM.inlier_ratio > 0.4 && tryReloc == true)
             // {
@@ -1891,6 +1882,7 @@ public:
                     startTemporaryMappingIndex = temporaryCloudKeyPoses3D->size();
                     frameTobeAbandoned = true;
                     TMMcount++;
+                    
                 }
                 
                 // more strict to exit TMM for map updating
@@ -1901,6 +1893,7 @@ public:
                     // LM.getTransformation(transformTobeMapped); // don't change it here, need original one as odom factor
                     goodToMergeMap = true;
                     cout<<"Now it is okay to merge the temporary map"<<endl;
+                    initSmoothing = false;
                 }
             }
             // only correct pose from fastlio when mapping quality is good
@@ -1908,12 +1901,11 @@ public:
             if (temporaryMappingMode == false) 
             {
                 affine_imu_to_map = LM.affine_out;
-                globalEstimator.inputGlobalLocPose(cloudInfoTime,affine_imu_to_map.matrix().cast<double>(),1.0-LM.inlier_ratio, 0.2);
-                LM.getTransformation(transformTobeMapped);
+                globalEstimator.inputGlobalLocPose(cloudInfoTime,affine_imu_to_map.matrix().cast<double>(),1.0-LM.inlier_ratio, 0.1);
+                // LM.getTransformation(transformTobeMapped);
             }
 
-            // transformAverage();
-
+            transformSmoothing();
             Eigen::Matrix4d Tgl = Eigen::Matrix4d::Identity();
             globalEstimator.getTgl(Tgl);
             // for recording mapping logs
@@ -1948,14 +1940,71 @@ public:
 
     }
 
-    // void transformAverage()
-    // {
-    //     //Assuming no drift within 10m && getting rid of outliers
-    //     Eigen::Affine3f affine_odom_to_map_tmp = affine_imu_to_map*affine_imu_to_odom.inverse();
-    //     affineGLsliding.push_back(affine_odom_to_map_tmp);
+    void transformSmoothing()
+    {
+        //Assuming no drift within 10m && getting rid of outliers
+        if (initSmoothing == false){
+            cout<<"starting or exiting TMM..."<<endl;
+            affine_odom_to_map = affine_imu_to_map*affine_imu_to_odom.inverse();
+            lastAffineGL = affine_odom_to_map;
+            Affine3f2Trans(affine_imu_to_map,transformTobeMapped);
+            initSmoothing = true;
+            return;
+        }
+        if(frameTobeAbandoned) 
+        {
+            cout<<"clearing Tgl buffer"<<endl;
+            affineGLsliding.clear();
+            initSmoothing = false;
+            return;
+        }
+        Eigen::Affine3f affine_odom_to_map_tmp = affine_imu_to_map*affine_imu_to_odom.inverse();
+        affineGLsliding.push_back(affine_odom_to_map_tmp);
 
+        if ( sqrt((affine_odom_to_map_tmp(0,3)-lastAffineGL(0,3))*(affine_odom_to_map_tmp(0,3)-lastAffineGL(0,3))
+            + (affine_odom_to_map_tmp(1,3)-lastAffineGL(1,3))*(affine_odom_to_map_tmp(1,3)-lastAffineGL(1,3)))> maxNoDriftDist)
+        {
+            affineGLsliding.erase(affineGLsliding.begin());
+            lastAffineGL = affineGLsliding[0];
+        }
+        int len = affineGLsliding.size();
+        vector<vector<float>> vecDOF6(len,vector<float>(6,0));
+        for(int i = 0; i < len; i++)
+        {
+            float tmp[6];
+            Affine3f2Trans(affineGLsliding[i],tmp);
+            for (int j=0; j < 6; j++)    vecDOF6[i][j] = tmp[j];
+        }
 
-    // }
+        float trans_mean[6] = {0};
+        for(int i = 0; i < len; i++)
+        {
+            for (int j=0; j < 6; j++)
+            {
+                trans_mean[j] += vecDOF6[i][j]/len;
+            }
+        }
+        affine_odom_to_map = trans2Affine3f(trans_mean);
+        affine_imu_to_map = affine_odom_to_map*affine_imu_to_odom;
+        Affine3f2Trans(affine_imu_to_map,transformTobeMapped);
+
+        // // get the mean and std of x y
+        // float meanx = 0, stdx = 0;
+        // float meany = 0, stdy = 0;
+        
+        // for(int i = 0; i< len; i++) {
+        //     meanx += affineGLsliding[i](0,3);
+        //     meany += affineGLsliding[i](1,3);
+        // }
+        // meanx = meanx/len;
+        // meany = meany/len;
+        // for(int i = 0; i< len; i++) {
+        //     stdx += (affineGLsliding[i](0,3)-meanx);
+        //     stdy += (affineGLsliding[i](1,3)-meany);
+        // }
+        // stdx = (len>1?(sqrt(stdx)/(len-1)):0);
+        // stdy = (len>1?(sqrt(stdy)/(len-1)):0);
+    }
 
     int saveFrame()
     {

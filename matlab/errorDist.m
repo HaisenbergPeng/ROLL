@@ -1,9 +1,9 @@
 clc;
 clear;
 close all
-folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_fusion";
+folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping";
 % folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/updated_map_newInlier";
-date = "2013-02-23";
+date = "2012-02-02";
 logFilePath = folder+"/"+date+"/map_pcd/mappingError.txt";
 poseFilePath = folder+"/"+date+"/map_pcd/path_mapping.txt";
 % poseFilePath = folder+"/"+date+"/map_pcd/path_fusion.txt";
@@ -106,8 +106,8 @@ figure(3)
 plot(timeLog,logData{7});
 hold on
 plot(timeLog,logData{8});
-plot(timeLog,logData{9});
-plot(timeLog,logData{10});
+% plot(timeLog,logData{9});
+% plot(timeLog,logData{10});
 legend("x","y","xF","yF");
 
 figure(4)

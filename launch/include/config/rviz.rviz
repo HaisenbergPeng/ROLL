@@ -9,7 +9,6 @@ Panels:
         - /links1/TF1/Frames1
         - /links1/lidar1
         - /Feature Cloud1
-        - /Feature Cloud1/cloudProjected1
         - /Mapping1
       Splitter Ratio: 0.560000002
     Tree Height: 921
@@ -391,14 +390,14 @@ Visualization Manager:
           Channel Name: intensity
           Class: rviz/PointCloud2
           Color: 255; 255; 255
-          Color Transformer: FlatColor
+          Color Transformer: Intensity
           Decay Time: 0
           Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
-          Max Intensity: 29.0766945
+          Max Intensity: 30.0256538
           Min Color: 0; 0; 0
-          Min Intensity: 0
+          Min Intensity: 2.00165343
           Name: cloudProjected
           Position Transformer: XYZ
           Queue Size: 10
@@ -460,9 +459,9 @@ Visualization Manager:
           Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
-          Max Intensity: 30.0921211
+          Max Intensity: 30.0996399
           Min Color: 0; 0; 0
-          Min Intensity: 2.04303598
+          Min Intensity: 0.000257587992
           Name: Map (local_temporal)
           Position Transformer: XYZ
           Queue Size: 10
@@ -485,14 +484,14 @@ Visualization Manager:
           Channel Name: intensity
           Class: rviz/PointCloud2
           Color: 255; 255; 255
-          Color Transformer: Intensity
+          Color Transformer: FlatColor
           Decay Time: 0
           Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
-          Max Intensity: 30.1000004
+          Max Intensity: 30.1001434
           Min Color: 0; 0; 0
-          Min Intensity: 0.000208847807
+          Min Intensity: -7.54751673e-05
           Name: Map (global)
           Position Transformer: XYZ
           Queue Size: 10
@@ -537,13 +536,13 @@ Visualization Manager:
           Axis: Z
           Channel Name: intensity
           Class: rviz/PointCloud2
-          Color: 255; 255; 255
+          Color: 255; 0; 0
           Color Transformer: Intensity
           Decay Time: 0
           Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
-          Max Intensity: 1317
+          Max Intensity: 1357
           Min Color: 0; 0; 0
           Min Intensity: 0
           Name: key_poses
@@ -552,7 +551,7 @@ Visualization Manager:
           Selectable: true
           Size (Pixels): 3
           Size (m): 1
-          Style: Flat Squares
+          Style: Spheres
           Topic: /kloam/mapping/key_poses
           Unreliable: false
           Use Fixed Frame: true
@@ -638,10 +637,10 @@ Visualization Manager:
           Color: 255; 255; 255
           Color Transformer: Intensity
           Decay Time: 0
-          Enabled: false
+          Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
-          Max Intensity: 28
+          Max Intensity: 30
           Min Color: 0; 0; 0
           Min Intensity: 0
           Name: temporaryKeyPoses
@@ -655,7 +654,7 @@ Visualization Manager:
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
-          Value: false
+          Value: true
       Enabled: true
       Name: Mapping
     - Class: rviz/Image
@@ -747,16 +746,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 87.4515381
+      Distance: 59.7627258
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -9.86783791
-        Y: -14.2375832
-        Z: -0.000318705919
+        X: 3.55739546
+        Y: -10.0641193
+        Z: -0.000203988282
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
@@ -765,7 +764,7 @@ Visualization Manager:
       Pitch: -1.56979632
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 0.860477567
+      Yaw: 2.5786376
     Saved: ~
 Window Geometry:
   Displays:
@@ -783,5 +782,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1855
-  X: 65
+  X: 1985
   Y: 24

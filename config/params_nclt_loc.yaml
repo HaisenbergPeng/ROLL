@@ -5,8 +5,8 @@ kloam:
   savePose: true # for path recording purposes /reloc gt, save it to saveMapDirectory
   saveMatchingError: true
   mapUpdateEnabled: true
-  saveMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-02-02/map_pcd          
-  saveKeyframeMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2013-02-02/keyframes 
+  saveMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-02-02-test/map_pcd          
+  saveKeyframeMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-02-02-test/keyframes 
   # loadKeyframeMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-11-17/keyframes
   loadKeyframeMapDirectory: /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-01-15-gt/keyframes
 
@@ -35,7 +35,7 @@ kloam:
   # Visualization
   globalMapVisualizationSearchRadius: 1000.0    # meters, global map visualization radius(index would overflow if too big)
   globalMapVisualizationPoseDensity: 10.0       # 10 by default, meters, global map visualization keyframe density
-  globalMapVisualizationLeafSize: 1.0           # 1 by default, meters, global map visualization cloud density
+  globalMapVisualizationLeafSize: 1.0          # 1 by default, meters, global map visualization cloud density
 
     # Surrounding map
   surroundingkeyframeAddingDistThreshold: 1.0   # 1.0 by default,meters, regulate keyframe adding threshold
