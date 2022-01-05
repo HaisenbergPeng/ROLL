@@ -143,8 +143,7 @@ struct LidarPlaneNormFactor
 
 struct LidarDistanceFactor
 {
-
-	LidarDistanceFactor(Eigen::Vector3d curr_point_, Eigen::Vector3d closed_point_) 
+	LidarDistanceFactor(Eigen::Vector3d curr_point_, Eigen::Vector3d closed_point_)
 						: curr_point(curr_point_), closed_point(closed_point_){}
 
 	template <typename T>

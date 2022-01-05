@@ -20,13 +20,10 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 #include"LOAMmapping.h"
+#include "globalOpt.h"
 
 using namespace gtsam;
 
-using symbol_shorthand::X; // Pose3 (x,y,z,r,p,y)
-using symbol_shorthand::V; // Vel   (xdot,ydot,zdot)
-using symbol_shorthand::B; // Bias  (ax,ay,az,gx,gy,gz)
-using symbol_shorthand::G; // GPS pose
 /*
     * A point cloud type that has 6D pose info ([x,y,z,roll,pitch,yaw] intensity is time stamp)
     */
@@ -51,18 +48,24 @@ POINT_CLOUD_REGISTER_POINT_STRUCT (PointXYZIRPYT,
 typedef PointXYZIRPYT  PointTypePose;
 typedef geometry_msgs::PoseWithCovarianceStampedConstPtr rvizPoseType;
 
+// for trajectory alignment
+GlobalOptimization globalEstimator(100,0.3);
+
 class mapOptimization : public ParamServer
 {
 
 public:
+    vector<Eigen::Affine3f> affineGLsliding;
+    Eigen::Affine3f lastAffineGL = Eigen::Affine3f::Identity();
+
     // indoor outdoor keyframe detection
     vector<int> isIndoorKeyframe;
     vector<int> isIndoorKeyframeTMM;
 
-    Eigen::Affine3f trans_lidar_to_imu;
-    Eigen::Affine3f trans_imu_to_body ;
-    Eigen::Affine3f trans_lidar_to_body;
-    Eigen::Affine3f trans_gps_to_body;
+    Eigen::Affine3f affine_lidar_to_imu;
+    Eigen::Affine3f affine_imu_to_body;
+    Eigen::Affine3f affine_lidar_to_body;
+    Eigen::Affine3f affine_gps_to_body;
     //gps
     double rns;
     double rew;
@@ -109,7 +112,7 @@ public:
 
     bool doneSavingMap = false;
 
-    Eigen::Affine3f affine_lidar_to_odom; // convert points in lidar frame to odom frame
+    Eigen::Affine3f affine_imu_to_odom; // convert points in lidar frame to odom frame
     Eigen::Affine3f affine_imu_to_map;
     Eigen::Affine3f affine_odom_to_map;
 
@@ -130,9 +133,11 @@ public:
     ros::Publisher pubLidarCloudSurround;
     ros::Publisher pubLidarOdometryGlobal;
     ros::Publisher pubLidarOdometryGlobalFusion;
+    ros::Publisher vinsFusion;
     ros::Publisher pubKeyPoses;
     ros::Publisher pubPath;
     ros::Publisher pubPathFusion;
+    ros::Publisher pubPathFusionVINS;
 
     ros::Publisher pubHistoryKeyFrames;
     ros::Publisher pubIcpKeyFrames;
@@ -223,6 +228,7 @@ public:
     
     nav_msgs::Path globalPath;
     nav_msgs::Path globalPathFusion;
+    nav_msgs::Path globalPathFusionVINS;
 
 
     bool poseGuessFromRvizAvailable = false;
@@ -233,6 +239,7 @@ public:
 
     mapOptimization()
     {
+
         ISAM2Params parameters;
         parameters.relinearizeThreshold = 0.1;
         parameters.relinearizeSkip = 1;
@@ -245,8 +252,10 @@ public:
         pubLidarCloudSurround       = nh.advertise<sensor_msgs::PointCloud2>("/kloam/mapping/map_global", 1);
         pubLidarOdometryGlobal      = nh.advertise<nav_msgs::Odometry> ("/kloam/mapping/odometry", 1);
         pubLidarOdometryGlobalFusion      = nh.advertise<nav_msgs::Odometry> ("/kloam/mapping/odometry_fusion", 1);
+        vinsFusion      = nh.advertise<nav_msgs::Odometry> ("/kloam/mapping/vins_fusion", 1);
         pubPath                     = nh.advertise<nav_msgs::Path>("/kloam/mapping/path", 1);
         pubPathFusion               = nh.advertise<nav_msgs::Path>("/kloam/mapping/path_fusion", 1);
+        pubPathFusionVINS               = nh.advertise<nav_msgs::Path>("/kloam/mapping/path_fusion_vins", 1);
 
         pubHistoryKeyFrames   = nh.advertise<sensor_msgs::PointCloud2>("/kloam/mapping/icp_loop_closure_history_cloud", 1);
         pubIcpKeyFrames       = nh.advertise<sensor_msgs::PointCloud2>("/kloam/mapping/icp_loop_closure_corrected_cloud", 1);
@@ -331,13 +340,13 @@ public:
 
     void allocateMemory()
     {        
-        trans_imu_to_body = pcl::getTransformation(-0.11, -0.18, -0.71, 0.0, 0.0, 0.0);
-        trans_lidar_to_body = pcl::getTransformation(0.002, -0.004, -0.957 ,0.014084807063594,   0.002897246558311,  -1.583065991436417);
-        trans_gps_to_body = pcl::getTransformation(-0.24, 0,-1.24, 0,0,0);
-        trans_lidar_to_imu = trans_imu_to_body.inverse()*trans_lidar_to_body;
+        affine_imu_to_body = pcl::getTransformation(-0.11, -0.18, -0.71, 0.0, 0.0, 0.0);
+        affine_lidar_to_body = pcl::getTransformation(0.002, -0.004, -0.957, 0.014084807063594,0.002897246558311,-1.583065991436417);
+        affine_gps_to_body = pcl::getTransformation(-0.24, 0,-1.24, 0,0,0);
+        affine_lidar_to_imu = affine_imu_to_body.inverse()*affine_lidar_to_body;
 
         affine_imu_to_map = Eigen::Affine3f::Identity();
-        affine_lidar_to_odom = Eigen::Affine3f::Identity();
+        affine_imu_to_odom = Eigen::Affine3f::Identity();
         affine_odom_to_map = Eigen::Affine3f::Identity();
         correctedPose = Eigen::Affine3f::Identity();
 
@@ -384,7 +393,7 @@ public:
         tf::Quaternion tfQ(msgIn.pose.pose.orientation.x,msgIn.pose.pose.orientation.y,msgIn.pose.pose.orientation.z,msgIn.pose.pose.orientation.w);
         double roll,pitch,yaw;
         tf::Matrix3x3(tfQ).getRPY(roll,pitch,yaw);
-        // think about why not update affine_lidar_to_odom and affine_imu_to_map here!!!
+        // think about why not update affine_imu_to_odom and affine_imu_to_map here!!!
         trans = pcl::getTransformation(msgIn.pose.pose.position.x,
         msgIn.pose.pose.position.y,msgIn.pose.pose.position.z, float(roll),float(pitch),float(yaw));
 
@@ -417,24 +426,56 @@ public:
         mtx.unlock();
         
         // in loc mode, publish lidar_to_map tf so pointcloud can be visualized in rviz
-        if (relocSuccess == false && localizationMode == false) return;
+        if (relocSuccess == false && localizationMode == true) return;
 
-        Eigen::Affine3f affine_lidar_to_odom_tmp;
-        Eigen::Affine3f trans_imu_to_odom;
-        odometryMsgToAffine3f(*msgIn, trans_imu_to_odom); 
+        Eigen::Affine3f affine_imu_to_odom_tmp;
+        Eigen::Affine3f affine_imu_to_odom;
+        odometryMsgToAffine3f(*msgIn, affine_imu_to_odom); 
+
+        globalEstimator.inputOdom(msgIn->header.stamp.toSec(),affine_imu_to_odom.matrix().cast<double>());
+
+        // testing fusion
+        Eigen::Vector3d odomP;
+        Eigen::Quaterniond odomQ;
+        globalEstimator.getGlobalOdom(odomP, odomQ);
+
+        nav_msgs::Odometry odomFusion;
+        odomFusion.header.frame_id = mapFrame;
+        odomFusion.header.stamp = msgIn->header.stamp;
+        odomFusion.pose.pose.orientation.x = odomQ.x();
+        odomFusion.pose.pose.orientation.y = odomQ.y();
+        odomFusion.pose.pose.orientation.z = odomQ.z();
+        odomFusion.pose.pose.orientation.w = odomQ.w();
+        odomFusion.pose.pose.position.x = odomP[0];
+        odomFusion.pose.pose.position.y = odomP[1];
+        odomFusion.pose.pose.position.z = odomP[2];
+        vinsFusion.publish(odomFusion);
+        geometry_msgs::PoseStamped pose_stampedF;
+        pose_stampedF.pose = odomFusion.pose.pose;
+        pose_stampedF.header.frame_id = mapFrame;
+        pose_stampedF.header.stamp = msgIn->header.stamp;
+        globalPathFusionVINS.poses.push_back(pose_stampedF);
+        globalPathFusionVINS.header.stamp = msgIn->header.stamp;
+        globalPathFusionVINS.header.frame_id = mapFrame;
+        pubPathFusionVINS.publish(globalPathFusionVINS); // before loop closure
+
+
         // // use raw, motion-skewed clouds
-        // affine_lidar_to_odom_tmp =trans_imu_to_body*trans_imu_to_odom*trans_lidar_to_imu;
+        // affine_imu_to_odom_tmp =affine_imu_to_body*affine_imu_to_odom*affine_lidar_to_imu;
         // use deskewed, imu-centered clouds
-        affine_lidar_to_odom_tmp =trans_imu_to_body*trans_imu_to_odom;
+        affine_imu_to_odom_tmp =affine_imu_to_body*affine_imu_to_odom;
         float odomTmp[6];
-        Affine3f2Trans(affine_lidar_to_odom_tmp, odomTmp);
+        Affine3f2Trans(affine_imu_to_odom_tmp, odomTmp);
         // cout<<"odom message: "<<odomTmp[3]<<" "<< odomTmp[4]<<endl;
         // high-frequency publish
-        Eigen::Affine3f affine_imu_to_map_tmp = affine_odom_to_map*affine_lidar_to_odom_tmp;
-        float array_lidar_to_map[6];
-        Affine3f2Trans(affine_imu_to_map_tmp, array_lidar_to_map);
-        tf::Quaternion q = tf::createQuaternionFromRPY(array_lidar_to_map[0],array_lidar_to_map[1],array_lidar_to_map[2]);
-        // cout<<"map message: "<<array_lidar_to_map[3]<<" "<< array_lidar_to_map[4]<<endl;
+        Eigen::Affine3f affine_imu_to_map_tmp = affine_odom_to_map*affine_imu_to_odom_tmp;
+
+        
+
+        float array_imu_to_map[6];
+        Affine3f2Trans(affine_imu_to_map_tmp, array_imu_to_map);
+        tf::Quaternion q = tf::createQuaternionFromRPY(array_imu_to_map[0],array_imu_to_map[1],array_imu_to_map[2]);
+        
         nav_msgs::Odometry odomAftMapped;
         odomAftMapped.header.frame_id = mapFrame;
         odomAftMapped.header.stamp = msgIn->header.stamp;
@@ -442,15 +483,15 @@ public:
         odomAftMapped.pose.pose.orientation.y = q.y();
         odomAftMapped.pose.pose.orientation.z = q.z();
         odomAftMapped.pose.pose.orientation.w = q.w();
-        odomAftMapped.pose.pose.position.x = array_lidar_to_map[3];
-        odomAftMapped.pose.pose.position.y = array_lidar_to_map[4];
-        odomAftMapped.pose.pose.position.z = array_lidar_to_map[5];
+        odomAftMapped.pose.pose.position.x = array_imu_to_map[3];
+        odomAftMapped.pose.pose.position.y = array_imu_to_map[4];
+        odomAftMapped.pose.pose.position.z = array_imu_to_map[5];
         pubLidarOdometryGlobalFusion.publish(odomAftMapped);
 
         // Publish TF
         static tf::TransformBroadcaster br;
-        tf::Transform t_odom_to_lidar = tf::Transform(tf::createQuaternionFromRPY(array_lidar_to_map[0], array_lidar_to_map[1], array_lidar_to_map[2]),
-                                                      tf::Vector3(array_lidar_to_map[3], array_lidar_to_map[4], array_lidar_to_map[5]));
+        tf::Transform t_odom_to_lidar = tf::Transform(tf::createQuaternionFromRPY(array_imu_to_map[0], array_imu_to_map[1], array_imu_to_map[2]),
+                                                      tf::Vector3(array_imu_to_map[3], array_imu_to_map[4], array_imu_to_map[5]));
         tf::StampedTransform trans_odom_to_lidar = tf::StampedTransform(t_odom_to_lidar, msgIn->header.stamp, mapFrame, lidarFrame);
         br.sendTransform(trans_odom_to_lidar);
         // // sometimes it cannot find tf when bagtime is not the same with the sensor time
@@ -477,6 +518,8 @@ public:
         globalPathFusion.header.stamp = msgIn->header.stamp;
         globalPathFusion.header.frame_id = mapFrame;
         pubPathFusion.publish(globalPathFusion); // before loop closure
+
+
 
 
         static bool init_flag = true;
@@ -508,7 +551,9 @@ public:
     void transformUpdate()
     {
         mtx.lock();
-        affine_odom_to_map = affine_imu_to_map*affine_lidar_to_odom.inverse();
+        
+        affine_odom_to_map = affine_imu_to_map*affine_imu_to_odom.inverse();
+
         // cout<<"affine_imu_to_map "<<affine_imu_to_map.matrix()<<endl;
         // cout<<"affine_odom_to_map "<<affine_odom_to_map.matrix()<<endl;
         // // Publish TF
@@ -555,12 +600,12 @@ public:
 
                 lidarCloudRaw.reset(new pcl::PointCloud<PointType>()); 
                 cloudInfo = *cloudInfoMsg;
-                Eigen::Affine3f trans_imu_to_odom;
-                odometryMsgToAffine3f(*lidarOdometryMsg,trans_imu_to_odom);
+                Eigen::Affine3f affine_imu_to_odom;
+                odometryMsgToAffine3f(*lidarOdometryMsg,affine_imu_to_odom);
                 // // // use raw, motion-skewed clouds
-                // affine_lidar_to_odom =trans_imu_to_body*trans_imu_to_odom*trans_lidar_to_imu;
+                // affine_imu_to_odom =affine_imu_to_body*affine_imu_to_odom*affine_lidar_to_imu;
                 // use deskewed, imu-centered clouds
-                affine_lidar_to_odom =trans_imu_to_body*trans_imu_to_odom;
+                affine_imu_to_odom =affine_imu_to_body*affine_imu_to_odom;
 
                 pcl::fromROSMsg(cloudInfoMsg->cloud_corner,  *lidarCloudCornerLast);
                 pcl::fromROSMsg(cloudInfoMsg->cloud_surface, *lidarCloudSurfLast);
@@ -824,7 +869,7 @@ public:
         z = alti0 - gpsMsg->altitude;
 
         Eigen::Affine3f trans_gps_to_gpsM = pcl::getTransformation(x,y,z,0,0,0);
-        Eigen::Affine3f trans_imu_to_map = trans_gps_to_body*trans_gps_to_gpsM*trans_gps_to_body.inverse()*trans_imu_to_body;
+        Eigen::Affine3f trans_imu_to_map = affine_gps_to_body*trans_gps_to_gpsM*affine_gps_to_body.inverse()*affine_imu_to_body;
         cout<<"after conversion x y z: "<<trans_imu_to_map(0,3)<<" "<<trans_imu_to_map(1,3)<<" "<<trans_imu_to_map(2,3)<<endl;
         nav_msgs::Odometry odomGPS;
         // notice PoseWithCovariance order: # (x, y, z, rotation about X axis, rotation about Y axis, rotation about Z axis; float64[36] covariance
@@ -855,9 +900,9 @@ public:
         Eigen::Affine3f trans_body_to_map,trans_imu_to_map;
         odometryMsgToAffine3f(*gtMsg, trans_body_to_map);
         // // use raw, motion-skewed clouds
-        // trans_lidar_to_map = trans_body_to_map*trans_lidar_to_body;
+        // trans_lidar_to_map = trans_body_to_map*affine_imu_to_body;
         // use deskewed, imu-centered clouds
-        trans_imu_to_map = trans_body_to_map*trans_imu_to_body;
+        trans_imu_to_map = trans_body_to_map*affine_imu_to_body;
         float roll,pitch,yaw,x,y,z;
         pcl::getTranslationAndEulerAngles(trans_imu_to_map,x,y,z,roll,pitch,yaw);
         tf::Quaternion q = tf::createQuaternionFromRPY(roll,pitch,yaw);
@@ -1655,7 +1700,7 @@ public:
                 odometryMsgToAffine3f(gpsQueue.front(),affine_imu_to_map);
                 gpsQueue.pop_front();
                 Affine3f2Trans(affine_imu_to_map,transformTobeMapped);
-                affine_odom_to_map = affine_imu_to_map*affine_lidar_to_odom.inverse();
+                affine_odom_to_map = affine_imu_to_map*affine_imu_to_odom.inverse();
                 for(int i=0;i<6;i++)
                 {
                     transformBeforeMapped[i] = transformTobeMapped[i];
@@ -1677,8 +1722,8 @@ public:
                     transformBeforeMapped[i] = initialGuess[i];
                 }
                 Eigen::Affine3f affine_body_to_map = trans2Affine3f(transformTobeMapped);
-                affine_imu_to_map = affine_body_to_map*trans_imu_to_body;
-                affine_odom_to_map = affine_imu_to_map*affine_lidar_to_odom.inverse();
+                affine_imu_to_map = affine_body_to_map*affine_imu_to_body;
+                affine_odom_to_map = affine_imu_to_map*affine_imu_to_odom.inverse();
                 printTrans("Initial: ",transformTobeMapped); //no more waiting for rviz guess      
                 relocSuccess = true;      
             }
@@ -1687,7 +1732,7 @@ public:
 
         
         float arrayTmp[6];
-        affine_imu_to_map = affine_odom_to_map*affine_lidar_to_odom;
+        affine_imu_to_map = affine_odom_to_map*affine_imu_to_odom;
         Affine3f2Trans(affine_imu_to_map, arrayTmp);
         
         for (int i=0;i<6;i++)                
@@ -1823,15 +1868,7 @@ public:
             LOAMmapping LM(lidarCloudCornerLastDS, lidarCloudSurfLastDS, lidarCloudCornerFromMapDS, lidarCloudSurfFromMapDS, affine_imu_to_map);
             LM.match();
             
-            // only correct pose from fastlio when mapping quality is good
-            // loam still cannot handle degeneracy well!!!
-            // in degenerate case, inlier may be high but global matching is not accurate,so use fastlio
-            // if (temporaryMappingMode == false && LM.isDegenerate == false)  // worse
-            if (temporaryMappingMode == false) 
-            {
-                affine_imu_to_map = LM.affine_out;
-                LM.getTransformation(transformTobeMapped);
-            }
+
 
             // // for relocalization in loc mode: only needed when used in actual world
             // if (LM.inlier_ratio > 0.4 && tryReloc == true)
@@ -1845,7 +1882,7 @@ public:
             if (relocSuccess == true && localizationMode == true)
             {
                 // for entering TMM: 
-                //inlier_ratio2 is more sensitive to map extension, and suffice
+                //inlier_ratio2 is more sensitive to map extension, and will suffice
                 if ( LM.inlier_ratio2 < startTemporaryMappingInlierRatioThre && temporaryMappingMode == false)
                 {
                     ROS_INFO_STREAM("At time "<< cloudInfoTime - rosTimeStart <<" sec, Entering temporary mapping mode due to poor mapping performace");
@@ -1866,6 +1903,19 @@ public:
                     cout<<"Now it is okay to merge the temporary map"<<endl;
                 }
             }
+            // only correct pose from fastlio when mapping quality is good
+            // if (temporaryMappingMode == false && LM.isDegenerate == false)  // worse
+            if (temporaryMappingMode == false) 
+            {
+                affine_imu_to_map = LM.affine_out;
+                globalEstimator.inputGlobalLocPose(cloudInfoTime,affine_imu_to_map.matrix().cast<double>(),1.0-LM.inlier_ratio, 0.2);
+                LM.getTransformation(transformTobeMapped);
+            }
+
+            // transformAverage();
+
+            Eigen::Matrix4d Tgl = Eigen::Matrix4d::Identity();
+            globalEstimator.getTgl(Tgl);
             // for recording mapping logs
             vector<double> tmp;
             tmp.push_back((double)cloudInfoTime);  //1
@@ -1874,14 +1924,16 @@ public:
             tmp.push_back(LM.inlier_ratio2);
             tmp.push_back(LM.regiError);
             tmp.push_back(LM.minEigen); //6
-            tmp.push_back(LM.edgePointCorrNum);
-            tmp.push_back(LM.surfPointCorrNum);
+            // tmp.push_back(LM.edgePointCorrNum);
+            // tmp.push_back(LM.surfPointCorrNum);
+            tmp.push_back(affine_odom_to_map(0,3));
+            tmp.push_back(affine_odom_to_map(1,3));
+            tmp.push_back(Tgl(0,3));
+            tmp.push_back(Tgl(1,3)); // why NAN???
             if (mappingTimeVec.empty())
                 tmp.push_back(0);
             else
                 tmp.push_back(mappingTimeVec.back()); // mapping time of the last frame
-            tmp.push_back(LM.cornerTime);
-            tmp.push_back(LM.surfTime);
 
 
             // ROS_INFO_STREAM("error: "<<regiError <<" inlier ratio: "<<  inlier_ratio);
@@ -1892,7 +1944,18 @@ public:
             ROS_WARN("Not enough features! Only %d edge and %d planar features available.", lidarCloudCornerLastDSNum, lidarCloudSurfLastDSNum);
         }
 
+        
+
     }
+
+    // void transformAverage()
+    // {
+    //     //Assuming no drift within 10m && getting rid of outliers
+    //     Eigen::Affine3f affine_odom_to_map_tmp = affine_imu_to_map*affine_imu_to_odom.inverse();
+    //     affineGLsliding.push_back(affine_odom_to_map_tmp);
+
+
+    // }
 
     int saveFrame()
     {
