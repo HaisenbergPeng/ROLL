@@ -1,9 +1,11 @@
 clc;
 clear;
 close all
-folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_fusion";
-% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/updated_map_newInlier";
-date = "2013-02-23";
+% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noTMM";
+folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc";
+% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noEdge";
+
+date = "2012-02-02";
 logFilePath = folder+"/"+date+"/map_pcd/mappingError.txt";
 poseFilePath = folder+"/"+date+"/map_pcd/path_mapping.txt";
 % poseFilePath = folder+"/"+date+"/map_pcd/path_fusion.txt";
@@ -77,41 +79,54 @@ for i=1:lenPose
         matPose(i,3)>-450 && matPose(i,3)<-435
         continue;
     end
-    %% convert gt body to gt imu
     ateError(i) = norm(matPose(i,2:3)-matGT(idx{i}(1),2:3));
+%     if ateError(i)>1
+%         matGT(idx{i}(1),2:3)
+%     end
 end
-idxOver1m = find(ateError> 1.0);
+idx1 = find(ateError < 0.5);
+idx2 = find(ateError < 1.0);
+idxOver1m= find(ateError > 1.0);
+idxNotZero = find(ateError ~=0);
 %% PLOT
 figure(1)
-plot(timeLog,isTMM);
+
+plot(timePose(idxNotZero)-timePose(1),ateError(idxNotZero));
+xlabel("Time (sec)");
 hold on
+%% map extension
 plot(timeLog,inlierRatio2);
 plot(timeLog,inlierRatio);
-plot(timeLog,regiError);
-plot(timePose-timePose(1),ateError);
-legend("isTMM","inlierRatio1.0","inlierRatio0.1","average reproj. error","loc. error");
-xlabel("Time (sec)");
-ylabel("Absolute trajectory error (m)");
+legend("Mapping inlier ratio","Absolute localization error");
+% %% scene change
+% ylabel("Absolute trajectory error (m)");
+% legend("w. TM","w.o. TM");
 % saveas(1,date + "_ate_error.jpg");
-
+disp("mean error: "+mean(ateError))
+disp("std error: "+std(ateError))
+disp("max error: "+max(ateError))
+disp("<0.5 %: "+ num2str(length(idx1)/lenPose))
+disp("<1.0 %: "+ num2str(length(idx2)/lenPose))
 
 figure(2)
 % plot(matPose(:,2),matPose(:,3),".");
 plot(matPose(:,2),matPose(:,3));
 hold on
 plot(matGT(:,2),matGT(:,3));
-plot(matPose(idxOver1m,2),matPose(idxOver1m,3),"*");
+plot(matPose(idx1,2),matPose(idx1,3),".","MarkerSize",4);
 
 figure(3)
-plot(timeLog,logData{7});
+plot(timeLog,logData{7}-logData{7}(1));
 hold on
-plot(timeLog,logData{8});
-plot(timeLog,logData{9});
-plot(timeLog,logData{10});
-legend("","","","");
+plot(timeLog,logData{8}-logData{8}(1));
+% plot(timePose-timePose(1),matPose(:,2))
+% plot(timeLog,logData{9});
+% plot(timeLog,logData{10});
+% legend("x","y","xF","yF");
 
 figure(4)
 histogram(ateError);
-
-
+% 
+% figure(5)
+% histogram(inlierRatio2)
 % a=[timePose-timePose(1) ateError];

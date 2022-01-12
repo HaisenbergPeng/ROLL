@@ -283,13 +283,13 @@ void GlobalOptimization::optimize()
                 yGL[t] = WGlobal_T_WLocal(1,3);
                 zGL[t] = WGlobal_T_WLocal(2,3);
             }
-            
-            statistics(xGL,sta[0],sta[1]);
-            statistics(yGL,sta[2],sta[3]);
-            statistics(zGL,sta[4],sta[5]);
-            xGL.clear();
-            yGL.clear();
-            zGL.clear();
+            // stupid! they are coupled!
+            // statistics(xGL,sta[0],sta[1]);
+            // statistics(yGL,sta[2],sta[3]);
+            // statistics(zGL,sta[4],sta[5]);
+            // xGL.clear();
+            // yGL.clear();
+            // zGL.clear();
 
             // cout<<"Tgl: "<<WGlobal_T_WLocal<<endl;
             // cout<<"mean x: "<<sta[0]<<" std x: "<<sta[1]<<endl;

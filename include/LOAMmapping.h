@@ -90,9 +90,9 @@ class LOAMmapping : public ParamServer
             {
                 lidarCloudOri->clear();
                 coeffSel->clear();
-                TicToc corner;
-                cornerOptimization(iterCount);
-                cornerTime += corner.toc();
+                // TicToc corner;
+                // cornerOptimization(iterCount);
+                // cornerTime += corner.toc();
                 TicToc surf;
                 surfOptimization(iterCount);
                 surfTime += surf.toc();
@@ -113,6 +113,7 @@ class LOAMmapping : public ParamServer
             {
                 inlier_ratio = 0;
                 minEigen = 0;
+                regiError = 0;
                 return;
             }
             regiError = accumulate(mapRegistrationError.begin(),mapRegistrationError.end(),0.0);

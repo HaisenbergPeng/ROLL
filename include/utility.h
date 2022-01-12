@@ -1,6 +1,6 @@
 #pragma once
-#ifndef _UTILITY_LIDAR_ODOMETRY_H_
-#define _UTILITY_LIDAR_ODOMETRY_H_
+#ifndef _UTILITY_H_
+#define _UTILITY_H_
 
 #include"tic_toc.h"
 #include <ros/ros.h>

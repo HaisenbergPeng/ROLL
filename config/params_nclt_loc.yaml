@@ -5,10 +5,10 @@ kloam:
   savePose: true # for path recording purposes /reloc gt, save it to saveMapDirectory
   saveMatchingError: true
   mapUpdateEnabled: true
-  saveMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-02-02-test/map_pcd          
-  saveKeyframeMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-02-02-test/keyframes 
-  # loadKeyframeMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-11-17/keyframes
-  loadKeyframeMapDirectory: /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-01-15-gt/keyframes
+  saveMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2/2012-06-15/map_pcd          
+  saveKeyframeMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2/2012-06-15/keyframes 
+  # loadKeyframeMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noEdge/2012-04-29/keyframes
+  loadKeyframeMapDirectory: /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc/2012-01-15-gt/keyframes
 
   saveRawCloud: false
   # temporary mapping mode
@@ -34,8 +34,8 @@ kloam:
   # initialGuess: [-0.008147915131152, -0.005539851055795, -0.519660742617843,78.049790086599444, 108.998587625038923, -3.169731476591604] #20130223
   # Visualization
   globalMapVisualizationSearchRadius: 1000.0    # meters, global map visualization radius(index would overflow if too big)
-  globalMapVisualizationPoseDensity: 10.0       # 10 by default, meters, global map visualization keyframe density
-  globalMapVisualizationLeafSize: 1.0          # 1 by default, meters, global map visualization cloud density
+  globalMapVisualizationPoseDensity: 5.0       # 10 by default, meters, global map visualization keyframe density
+  globalMapVisualizationLeafSize: 0.5          # 1 by default, meters, global map visualization cloud density
 
     # Surrounding map
   surroundingkeyframeAddingDistThreshold: 1.0   # 1.0 by default,meters, regulate keyframe adding threshold

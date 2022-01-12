@@ -585,7 +585,7 @@ public:
                 cloudInfoTime = cloudInfoBuffer.front()->header.stamp.toSec();
                 double lidarOdometryTime = lidarOdometryBuffer.front()->header.stamp.toSec();
 
-                // cout<<setiosflags(ios::fixed)<<setprecision(3)<<"cloud time: "<<cloudInfoTime<<"odometry time: "<<lidarOdometryTime<<endl;
+                // cout<<setiosflags(ios::fixed)<<setprecision(3)<<"cloud time: "<<cloudInfoTime-rosTimeStart<<endl;
                 if (rosTimeStart < 0) rosTimeStart = cloudInfoTime;
 
                 if (abs(lidarOdometryTime - cloudInfoTime) > 0.05) // normally >, so pop one cloud_info msg
@@ -655,7 +655,7 @@ public:
                     // TicToc publish;
                     publishLocalMap();
                     publishOdometry();
-                    // transformUpdate();
+                    transformUpdate();
                     
                     frameTobeAbandoned = false;
                     // cout<<"publish: "<<publish.toc()<<endl;
@@ -1881,8 +1881,7 @@ public:
                     temporaryMappingMode = true; // here is the case for outdated map
                     startTemporaryMappingIndex = temporaryCloudKeyPoses3D->size();
                     frameTobeAbandoned = true;
-                    TMMcount++;
-                    
+                    TMMcount++;                   
                 }
                 
                 // more strict to exit TMM for map updating
@@ -1893,7 +1892,6 @@ public:
                     // LM.getTransformation(transformTobeMapped); // don't change it here, need original one as odom factor
                     goodToMergeMap = true;
                     cout<<"Now it is okay to merge the temporary map"<<endl;
-                    initSmoothing = false;
                 }
             }
             // only correct pose from fastlio when mapping quality is good
@@ -1901,11 +1899,11 @@ public:
             if (temporaryMappingMode == false) 
             {
                 affine_imu_to_map = LM.affine_out;
-                globalEstimator.inputGlobalLocPose(cloudInfoTime,affine_imu_to_map.matrix().cast<double>(),1.0-LM.inlier_ratio, 0.1);
-                // LM.getTransformation(transformTobeMapped);
+                globalEstimator.inputGlobalLocPose(cloudInfoTime,affine_imu_to_map.matrix().cast<double>(),1.0-LM.inlier_ratio2, 0.1);
+                LM.getTransformation(transformTobeMapped);
             }
 
-            transformSmoothing();
+            
             Eigen::Matrix4d Tgl = Eigen::Matrix4d::Identity();
             globalEstimator.getTgl(Tgl);
             // for recording mapping logs
@@ -1918,8 +1916,11 @@ public:
             tmp.push_back(LM.minEigen); //6
             // tmp.push_back(LM.edgePointCorrNum);
             // tmp.push_back(LM.surfPointCorrNum);
-            tmp.push_back(affine_odom_to_map(0,3));
-            tmp.push_back(affine_odom_to_map(1,3));
+            float transO2M[6];
+            Affine3f2Trans(affine_odom_to_map, transO2M);
+
+            tmp.push_back(transO2M[1]); // only need pitch and yaw
+            tmp.push_back(transO2M[2]);
             tmp.push_back(Tgl(0,3));
             tmp.push_back(Tgl(1,3)); // why NAN???
             if (mappingTimeVec.empty())
@@ -1936,74 +1937,6 @@ public:
             ROS_WARN("Not enough features! Only %d edge and %d planar features available.", lidarCloudCornerLastDSNum, lidarCloudSurfLastDSNum);
         }
 
-        
-
-    }
-
-    void transformSmoothing()
-    {
-        //Assuming no drift within 10m && getting rid of outliers
-        if (initSmoothing == false){
-            cout<<"starting or exiting TMM..."<<endl;
-            affine_odom_to_map = affine_imu_to_map*affine_imu_to_odom.inverse();
-            lastAffineGL = affine_odom_to_map;
-            Affine3f2Trans(affine_imu_to_map,transformTobeMapped);
-            initSmoothing = true;
-            return;
-        }
-        if(frameTobeAbandoned) 
-        {
-            cout<<"clearing Tgl buffer"<<endl;
-            affineGLsliding.clear();
-            initSmoothing = false;
-            return;
-        }
-        Eigen::Affine3f affine_odom_to_map_tmp = affine_imu_to_map*affine_imu_to_odom.inverse();
-        affineGLsliding.push_back(affine_odom_to_map_tmp);
-
-        if ( sqrt((affine_odom_to_map_tmp(0,3)-lastAffineGL(0,3))*(affine_odom_to_map_tmp(0,3)-lastAffineGL(0,3))
-            + (affine_odom_to_map_tmp(1,3)-lastAffineGL(1,3))*(affine_odom_to_map_tmp(1,3)-lastAffineGL(1,3)))> maxNoDriftDist)
-        {
-            affineGLsliding.erase(affineGLsliding.begin());
-            lastAffineGL = affineGLsliding[0];
-        }
-        int len = affineGLsliding.size();
-        vector<vector<float>> vecDOF6(len,vector<float>(6,0));
-        for(int i = 0; i < len; i++)
-        {
-            float tmp[6];
-            Affine3f2Trans(affineGLsliding[i],tmp);
-            for (int j=0; j < 6; j++)    vecDOF6[i][j] = tmp[j];
-        }
-
-        float trans_mean[6] = {0};
-        for(int i = 0; i < len; i++)
-        {
-            for (int j=0; j < 6; j++)
-            {
-                trans_mean[j] += vecDOF6[i][j]/len;
-            }
-        }
-        affine_odom_to_map = trans2Affine3f(trans_mean);
-        affine_imu_to_map = affine_odom_to_map*affine_imu_to_odom;
-        Affine3f2Trans(affine_imu_to_map,transformTobeMapped);
-
-        // // get the mean and std of x y
-        // float meanx = 0, stdx = 0;
-        // float meany = 0, stdy = 0;
-        
-        // for(int i = 0; i< len; i++) {
-        //     meanx += affineGLsliding[i](0,3);
-        //     meany += affineGLsliding[i](1,3);
-        // }
-        // meanx = meanx/len;
-        // meany = meany/len;
-        // for(int i = 0; i< len; i++) {
-        //     stdx += (affineGLsliding[i](0,3)-meanx);
-        //     stdy += (affineGLsliding[i](1,3)-meany);
-        // }
-        // stdx = (len>1?(sqrt(stdx)/(len-1)):0);
-        // stdy = (len>1?(sqrt(stdy)/(len-1)):0);
     }
 
     int saveFrame()
