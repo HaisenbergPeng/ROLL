@@ -1,19 +1,19 @@
 kloam:
   localizationMode: true
-  saveKeyframeMap: true 
+  saveKeyframeMap: true
   savePCD: true
   savePose: true # for path recording purposes /reloc gt, save it to saveMapDirectory
   saveMatchingError: true
   mapUpdateEnabled: true
-  saveMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2/2012-06-15/map_pcd          
-  saveKeyframeMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2/2012-06-15/keyframes 
-  # loadKeyframeMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noEdge/2012-04-29/keyframes
+  saveMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noEdge/2012-02-02/map_pcd          
+  saveKeyframeMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noEdge/2012-02-02/keyframes 
+  # loadKeyframeMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noTMM/2013-01-10/keyframes
   loadKeyframeMapDirectory: /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc/2012-01-15-gt/keyframes
 
   saveRawCloud: false
   # temporary mapping mode
   inlierThreshold: 0.1 # if no serious map out-of-date, it suffice 99% of the time
-  startTemporaryMappingInlierRatioThre: 0.4
+  startTemporaryMappingInlierRatioThre: 0.3 # only for map extension?
   exitTemporaryMappingInlierRatioThre: 0.5
   slidingWindowSize: 30
 
@@ -30,12 +30,13 @@ kloam:
   # initialGuess: [-0.015221811894219, 0.001396211399287, -0.303854522173840,75.840364680427626, 109.017645300640666, -3.295762322731578] #20120804
   # initialGuess: [ -0.022510053101572, -0.009280409924894, -0.248550828547029, 77.430750494550978, 109.263558200969300, -3.198719816568997] #20121117
   # initialGuess: [-0.029788434570233, -0.010193528558576, -0.147575680110183,75.829339527800855, 107.724666286782551, -3.272894625813646] #20120110
-  # initialGuess: [ 0.004682509800383, 0.028480666632129, -0.634307081390563,76.505824066971385, 108.313730319190057, -3.255910820978710] # 20130405
   # initialGuess: [-0.008147915131152, -0.005539851055795, -0.519660742617843,78.049790086599444, 108.998587625038923, -3.169731476591604] #20130223
+
+    # initialGuess: [ 0.004682509800383, 0.028480666632129, -0.634307081390563,76.505824066971385, 108.313730319190057, -3.255910820978710] # 20130405
   # Visualization
   globalMapVisualizationSearchRadius: 1000.0    # meters, global map visualization radius(index would overflow if too big)
-  globalMapVisualizationPoseDensity: 5.0       # 10 by default, meters, global map visualization keyframe density
-  globalMapVisualizationLeafSize: 0.5          # 1 by default, meters, global map visualization cloud density
+  globalMapVisualizationPoseDensity: 10.0       # 10 by default, meters, global map visualization keyframe density
+  globalMapVisualizationLeafSize: 1.0          # 1 by default, meters, global map visualization cloud density
 
     # Surrounding map
   surroundingkeyframeAddingDistThreshold: 1.0   # 1.0 by default,meters, regulate keyframe adding threshold

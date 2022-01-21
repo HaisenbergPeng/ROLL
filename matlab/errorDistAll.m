@@ -2,18 +2,18 @@ clc;
 clear;
 close all
 startDate = "2012-01-15";
-% %% TMM
-% dateLists = ["2012-02-02","2012-03-17","2012-04-29",...
-%     "2012-05-11","2012-06-15","2012-08-04","2012-11-17","2013-01-10","2013-02-23"]';
-% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping";
+%% TMM
+dateLists = ["2012-02-02","2012-03-17","2012-04-29",...
+    "2012-05-11","2012-06-15","2012-08-04","2012-11-17","2013-01-10","2013-02-23"]';
+folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2";
 
 % %% no TMM
 % dateLists = ["2012-02-02","2012-03-17","2012-04-29","2012-06-15","2012-08-04","2013-01-10","2013-02-23"]';
 % folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noTMM";
 
-%% No edge
-dateLists = ["2012-02-02","2012-03-17","2012-04-29","2012-05-11"]';
-folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noEdge";
+% %% No edge
+% dateLists = ["2012-02-02","2012-03-17","2012-04-29","2012-05-11"]';
+% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noEdge";
 
 setNum = length(dateLists);
 daysPassed = cntDays(startDate,dateLists);
@@ -37,7 +37,8 @@ for iB=1:setNum
     disp("reading "+date);
     logFilePath = folder+"/"+date+"/map_pcd/mappingError.txt";
 %     poseFilePath = folder+"/"+date+"/map_pcd/path_mapping.txt";
-    poseFilePath = folder+"/"+date+"/map_pcd/path_fusion.txt"; 
+%     poseFilePath = folder+"/"+date+"/map_pcd/path_fusion.txt"; 
+    poseFilePath = folder+"/"+date+"/map_pcd/path_vinsfusion.txt";
     gtFilePath = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/"+date+"/groundtruth_"+date+".csv";
 
     %% log file reading
@@ -133,7 +134,7 @@ ylabel("Count");
 %% PLOT and SAVE
 T = table(dateLists,daysPassed,duration,meanError,stdError,maxError,percWithin02Meter,...
     percWithin05Meter,percWithinOneMeter,locFrequency,locFrequencyG,TMMno,mapExtension);
-writetable(T,"loc_results.xls");
+writetable(T,"loc_results_v2.xls");
 
 %% overall mean and std
 ateAll = [];

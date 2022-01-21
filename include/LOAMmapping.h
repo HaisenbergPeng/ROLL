@@ -97,6 +97,11 @@ class LOAMmapping : public ParamServer
                 surfOptimization(iterCount);
                 surfTime += surf.toc();
                 combineOptimizationCoeffs();
+
+                // inlier_ratio2 = (double)(surfPointCorrNum + edgePointCorrNum)/( lidarCloudSurfLastDSNum+ lidarCloudCornerLastDSNum);
+                // surf only
+                inlier_ratio2 = (double)surfPointCorrNum/ lidarCloudSurfLastDSNum;
+
                 // it is actually for map extension, otherwise cv error happens
                 // 0.2 or higher would seriously deteriarate the performance
                 if (inlier_ratio2 < 0.1 ) break; 
@@ -319,7 +324,7 @@ class LOAMmapping : public ParamServer
         std::fill(lidarCloudOriCornerFlag.begin(), lidarCloudOriCornerFlag.end(), false);
         std::fill(lidarCloudOriSurfFlag.begin(), lidarCloudOriSurfFlag.end(), false);
 
-        inlier_ratio2 = (double)(surfPointCorrNum + edgePointCorrNum)/( lidarCloudSurfLastDSNum+ lidarCloudCornerLastDSNum); // same as mapRegistrationError.size()
+
     }
 
     bool LMOptimization(int iterCount)

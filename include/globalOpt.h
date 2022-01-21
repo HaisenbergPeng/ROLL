@@ -29,17 +29,22 @@ using namespace std;
 class GlobalOptimization
 {
 public:
-	GlobalOptimization(int maxNo, float ratio);
+	GlobalOptimization(int maxNo);
 	~GlobalOptimization();
+	void setTgl(Eigen::Matrix4d mat);
 	void getTgl(Eigen::Matrix4d &tgl);
 	void affine2qt(const Eigen::Matrix4d aff, Eigen::Vector3d &locP, Eigen::Quaterniond &locQ);
 	// void inputGPS(double t, double latitude, double longitude, double altitude, double posAccuracy);
 	void inputOdom(double t, Eigen::Matrix4d affine);
 	void inputGlobalLocPose(double t, Eigen::Matrix4d affine, double t_error, double q_error);
 	void getGlobalOdom(Eigen::Vector3d &odomP, Eigen::Quaterniond &odomQ);
-	void statistics(const map<double,double> m, double &mean, double &std);
+	void getGlobalAffine(Eigen::Affine3f &Tml);
+
+	void resetOptimization(Eigen::Matrix4d Tgl);
 	nav_msgs::Path global_path;
 
+	bool isInitialized;
+	bool reInitialize;
 private:
 	// void GPS2XYZ(double latitude, double longitude, double altitude, double* xyz);
 	void optimize();
@@ -59,7 +64,13 @@ private:
 	Eigen::Vector3d lastP;
 	Eigen::Quaterniond lastQ;
 	int maxFrameNum;
-	float globalLocalRatio;
+
 	std::thread threadOpt;
+
+	// for acc jump identification
+	vector<Eigen::Matrix4d> poseVec;
+	Eigen::Matrix4d Tacc;
+	bool resetGlobalPoses;
+	Eigen::Matrix4d backupTgl;
 	// double stdx,meanx,stdy,meany,stdz,meanz;
 };

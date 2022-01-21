@@ -24,6 +24,7 @@
 #include <queue>
 #include <mutex>
 
+
 GlobalOptimization globalEstimator;
 ros::Publisher pub_global_odometry, pub_global_path, pub_car;
 nav_msgs::Path *global_path;
@@ -141,20 +142,21 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
     pub_global_path.publish(*global_path);
     publish_car_model(t, global_t, global_q);
 
-
     // write result to file
-    std::ofstream foutC("/home/tony-ws1/output/vio_global.csv", ios::app);
-    foutC.setf(ios::fixed, ios::floatfield);
+    std::ofstream foutC("/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2/2012-02-02/map_pcd/vins_fusion.text", ios::app);
+    if (foutC.isopen()) cout<<"File for recording fusion poses is opened"<<endl;
+    foutC.setf(ios::fixed, ios::floatfield);    
     foutC.precision(0);
-    foutC << pose_msg->header.stamp.toSec() * 1e9 << ",";
-    foutC.precision(5);
-    foutC << global_t.x() << ","
-            << global_t.y() << ","
-            << global_t.z() << ","
-            << global_q.w() << ","
-            << global_q.x() << ","
-            << global_q.y() << ","
-            << global_q.z() << endl;
+    foutC << pose_msg->header.stamp.toSec() * 1e9 << " ";
+    foutC.precision(6);
+
+    foutC   << global_q.x() << " "
+            << global_q.y() << " "
+            << global_q.z() << " "
+            << global_q.w() << " "
+            << global_t.x() << " "
+            << global_t.y() << " "
+            << global_t.z() << "\n"
     foutC.close();
 }
 
@@ -162,6 +164,7 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "globalEstimator");
     ros::NodeHandle n("~");
+
 
     global_path = &globalEstimator.global_path;
 

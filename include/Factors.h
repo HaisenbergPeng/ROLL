@@ -31,6 +31,7 @@ struct globalTError
 				   q_w(q_w), q_x(q_x), q_y(q_y), q_z(q_z),
 				   t_var(t_var), q_var(q_var){}
 
+	// corresponding addResidualBlock
 	template <typename T>
 	bool operator()(const T* const q_i, const T* t_i, T* residuals) const
 	{

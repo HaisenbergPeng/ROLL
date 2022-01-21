@@ -49,16 +49,15 @@ typedef PointXYZIRPYT  PointTypePose;
 typedef geometry_msgs::PoseWithCovarianceStampedConstPtr rvizPoseType;
 
 // for trajectory alignment
-GlobalOptimization globalEstimator(100,0.3);
+GlobalOptimization globalEstimator(100);
+
 
 class mapOptimization : public ParamServer
 {
 
 public:
-    bool initSmoothing = false;
-    float maxNoDriftDist = 10.0;
-    vector<Eigen::Affine3f> affineGLsliding;
-    Eigen::Affine3f lastAffineGL = Eigen::Affine3f::Identity();
+    Eigen::Affine3f lastOdometryPose;
+    nav_msgs::Path global_path_gtsam;
 
     // indoor outdoor keyframe detection
     vector<int> isIndoorKeyframe;
@@ -132,6 +131,7 @@ public:
     Values isamCurrentEstimate;
     Eigen::MatrixXd poseCovariance;
 
+    ros::Publisher pub_global_path_gtsam;
     ros::Publisher pubLidarCloudSurround;
     ros::Publisher pubLidarOdometryGlobal;
     ros::Publisher pubLidarOdometryGlobalFusion;
@@ -144,6 +144,7 @@ public:
     ros::Publisher pubHistoryKeyFrames;
     ros::Publisher pubIcpKeyFrames;
     ros::Publisher pubRecentKeyFrames;
+    ros::Publisher pubMergedMap;
     ros::Publisher pubRecentKeyFrame;
     ros::Publisher pubLoopConstraintEdge;
     ros::Publisher pubKeyPosesTmp;
@@ -242,10 +243,12 @@ public:
     mapOptimization()
     {
 
-        ISAM2Params parameters;
-        parameters.relinearizeThreshold = 0.1;
-        parameters.relinearizeSkip = 1;
-        isam = new ISAM2(parameters);
+        // // ISAM2Params parameters;
+        // // parameters.relinearizeThreshold = 0.1;
+        // // parameters.relinearizeSkip = 1;
+        // // isam = new ISAM2(parameters);
+
+        pub_global_path_gtsam = nh.advertise<nav_msgs::Path>("global_path_gtsam", 100);
 
         initialpose_sub = nh.subscribe("/initialpose", 1, &mapOptimization::initialpose_callback, this);
 
@@ -264,6 +267,9 @@ public:
         pubLoopConstraintEdge = nh.advertise<visualization_msgs::MarkerArray>("/kloam/mapping/loop_closure_constraints", 1);
 
         pubRecentKeyFrames    = nh.advertise<sensor_msgs::PointCloud2>("/kloam/mapping/map_local", 1);
+
+        pubMergedMap = nh.advertise<sensor_msgs::PointCloud2>("/kloam/mapping/merged_map", 1);
+
         pubRecentKeyFrame     = nh.advertise<sensor_msgs::PointCloud2>("/kloam/mapping/cloud_registered", 1);
 
         subCloud = nh.subscribe<kloam::cloud_info>("/kloam/feature/cloud_info", 10, &mapOptimization::lidarCloudInfoHandler, this);
@@ -342,6 +348,7 @@ public:
 
     void allocateMemory()
     {        
+        resetISAM();
         affine_imu_to_body = pcl::getTransformation(-0.11, -0.18, -0.71, 0.0, 0.0, 0.0);
         affine_lidar_to_body = pcl::getTransformation(0.002, -0.004, -0.957, 0.014084807063594,0.002897246558311,-1.583065991436417);
         affine_gps_to_body = pcl::getTransformation(-0.24, 0,-1.24, 0,0,0);
@@ -437,6 +444,8 @@ public:
         // affine_imu_to_odom_tmp =affine_imu_to_body*affine_imu_to_odom*affine_lidar_to_imu;
         // use deskewed, imu-centered clouds
         affine_imu_to_odom_tmp =affine_imu_to_body*affine_imu_to_odom_tmp1; 
+        // high-frequency publish
+        Eigen::Affine3f affine_imu_to_map_tmp = affine_odom_to_map*affine_imu_to_odom_tmp;
 
         globalEstimator.inputOdom(msgIn->header.stamp.toSec(),affine_imu_to_odom_tmp.matrix().cast<double>());
         // testing fusion
@@ -465,12 +474,12 @@ public:
         pubPathFusionVINS.publish(globalPathFusionVINS); // before loop closure
 
 
+        
 
         float odomTmp[6];
         Affine3f2Trans(affine_imu_to_odom_tmp, odomTmp);
         // cout<<"odom message: "<<odomTmp[3]<<" "<< odomTmp[4]<<endl;
-        // high-frequency publish
-        Eigen::Affine3f affine_imu_to_map_tmp = affine_odom_to_map*affine_imu_to_odom_tmp;
+
 
         
 
@@ -810,6 +819,18 @@ public:
             }
             mtx.unlock();
         }
+
+        pcl::PointCloud<PointType>::Ptr cloudLocal(new pcl::PointCloud<PointType>());
+        for (int i=0;i<(int)tempSize;i++)
+        {
+            int idx = temporaryCloudKeyPoses3D->points[i].intensity;
+            *cloudLocal += *transformPointCloud(temporarySurfCloudKeyFrames[idx],&temporaryCloudKeyPoses6D->points[i]);
+            *cloudLocal += *transformPointCloud(temporaryCornerCloudKeyFrames[idx],&temporaryCloudKeyPoses6D->points[i]);
+        }
+        publishCloud(&pubMergedMap, cloudLocal, timeLidarInfoStamp, mapFrame);
+
+
+
         for (int i = priorNode; i < tempSize; i++)
         {
             cloudKeyPoses3D->push_back(temporaryCloudKeyPoses3D->points[i]); // no "points." in between!!!
@@ -1079,12 +1100,13 @@ public:
                 double r,p,y;
                 tf::Quaternion q(tmp.pose.pose.orientation.x,tmp.pose.pose.orientation.y, tmp.pose.pose.orientation.z,tmp.pose.pose.orientation.w);
                 tf::Matrix3x3(q).getRPY(r,p,y);
-                // save it in nano sec to compare it with the nclt gt
+                // save it in micro sec to compare it with the nclt gt
                 pose_file2<<tmp.header.stamp.toSec()*1e+6<<" "<<tmp.pose.pose.position.x<<" "<<tmp.pose.pose.position.y<<" "<<
                 tmp.pose.pose.position.z<<" "<<r<<" "<<p<<" "<<y<<" "<<"\n";
             }
             pose_file2.close();
             mtx.unlock();
+
             mtx.lock();
             // higher frequency odometry
             ofstream pose_file3;
@@ -1092,9 +1114,9 @@ public:
             pose_file3.open(fileName3,ios::out);
             pose_file3.setf(ios::fixed, ios::floatfield);  // 设定为 fixed 模式，以小数点表示浮点数
             pose_file3.precision(6); // 固定小数位6
-            int pointN2 = (int)globalPathFusion.poses.size();
-            cout<<"fusion pose size: "<<pointN2<<endl;
-            for (int i = 0; i < pointN2; ++i)
+            int pointN3 = (int)globalPathFusion.poses.size();
+            cout<<"fusion pose size: "<<pointN3<<endl;
+            for (int i = 0; i < pointN3; ++i)
             {
                 geometry_msgs::PoseStamped tmp = globalPathFusion.poses[i];
                 double r,p,y;
@@ -1105,6 +1127,28 @@ public:
                 tmp.pose.position.z<<" "<<r<<" "<<p<<" "<<y<<" "<<"\n";
             }
             pose_file3.close();
+            mtx.unlock();
+
+            mtx.lock();
+            // higher frequency odometry
+            ofstream pose_file4;
+            string fileName4 = saveMapDirectory+"/path_vinsfusion.txt";
+            pose_file4.open(fileName4,ios::out);
+            pose_file4.setf(ios::fixed, ios::floatfield);  // 设定为 fixed 模式，以小数点表示浮点数
+            pose_file4.precision(6); // 固定小数位6
+            int pointN4 = (int)globalPathFusionVINS.poses.size();
+            cout<<"vinsfusion pose size: "<<pointN4<<endl;
+            for (int i = 0; i < pointN4; ++i)
+            {
+                geometry_msgs::PoseStamped tmp = globalPathFusionVINS.poses[i];
+                double r,p,y;
+                tf::Quaternion q(tmp.pose.orientation.x,tmp.pose.orientation.y, tmp.pose.orientation.z,tmp.pose.orientation.w);
+                tf::Matrix3x3(q).getRPY(r,p,y);
+                // save it in nano sec to compare it with the nclt gt
+                pose_file4<<tmp.header.stamp.toSec()*1e+6<<" "<<tmp.pose.position.x<<" "<<tmp.pose.position.y<<" "<<
+                tmp.pose.position.z<<" "<<r<<" "<<p<<" "<<y<<" "<<"\n";
+            }
+            pose_file4.close();
             cout<<"Trajectory recording finished!"<<endl;
             mtx.unlock();
 
@@ -1703,7 +1747,11 @@ public:
                     transformBeforeMapped[i] = transformTobeMapped[i];
                 }
                 printTrans("Initial: ",transformTobeMapped);
+                globalEstimator.setTgl(affine_odom_to_map.matrix().cast<double>());
+                globalEstimator.inputGlobalLocPose(cloudInfoTime, affine_imu_to_map.matrix().cast<double>(), 0.5, 0.1);
+                
                 relocSuccess = true; // only apply to bag testing
+                
             }
             else if (count < tryRuns)
             {
@@ -1721,7 +1769,9 @@ public:
                 Eigen::Affine3f affine_body_to_map = trans2Affine3f(transformTobeMapped);
                 affine_imu_to_map = affine_body_to_map*affine_imu_to_body;
                 affine_odom_to_map = affine_imu_to_map*affine_imu_to_odom.inverse();
-                printTrans("Initial: ",transformTobeMapped); //no more waiting for rviz guess      
+                printTrans("Initial: ",transformTobeMapped); //no more waiting for rviz guess 
+                globalEstimator.setTgl(affine_odom_to_map.matrix().cast<double>());     
+                globalEstimator.inputGlobalLocPose(cloudInfoTime, affine_imu_to_map.matrix().cast<double>(), 0.5, 0.1);
                 relocSuccess = true;      
             }
             return;          
@@ -1877,7 +1927,7 @@ public:
                 if ( LM.inlier_ratio2 < startTemporaryMappingInlierRatioThre && temporaryMappingMode == false)
                 {
                     ROS_INFO_STREAM("At time "<< cloudInfoTime - rosTimeStart <<" sec, Entering temporary mapping mode due to poor mapping performace");
-                    ROS_INFO_STREAM("Inlier ratio: "<< LM.inlier_ratio<< "Inlier ratio2: "<< LM.inlier_ratio2);                        
+                    ROS_INFO_STREAM("Inlier ratio2: "<< LM.inlier_ratio2);                        
                     temporaryMappingMode = true; // here is the case for outdated map
                     startTemporaryMappingIndex = temporaryCloudKeyPoses3D->size();
                     frameTobeAbandoned = true;
@@ -1898,14 +1948,28 @@ public:
             // if (temporaryMappingMode == false && LM.isDegenerate == false)  // worse
             if (temporaryMappingMode == false) 
             {
-                affine_imu_to_map = LM.affine_out;
-                globalEstimator.inputGlobalLocPose(cloudInfoTime,affine_imu_to_map.matrix().cast<double>(),1.0-LM.inlier_ratio2, 0.1);
-                LM.getTransformation(transformTobeMapped);
-            }
+                // fusion with gtsam 
+                // // TicToc opt_gtsam;
+                // Eigen::Affine3f affine_imu_to_map_smooth = gtsamOptimize(affine_imu_to_map,LM.affine_out, 0.5*(1-LM.inlier_ratio));
+                // // cout<<"gtsam opt takes:"<<opt_gtsam.toc()<<" ms"<<endl;
+                
 
-            
-            Eigen::Matrix4d Tgl = Eigen::Matrix4d::Identity();
-            globalEstimator.getTgl(Tgl);
+                // // primitive fusion
+                // affine_imu_to_map = LM.affine_out;
+                            
+                // fusion with ceres: currently only for smoothing, not for pose guess.
+                // cannot update Tgl immediately because opt takes time, getting a delayed Tgl is rather forfeiting it
+
+                if (goodToMergeMap) // reset for the frame of merging
+                    globalEstimator.resetOptimization(LM.affine_out.matrix().cast<double>());
+                else 
+                    globalEstimator.inputGlobalLocPose(cloudInfoTime, LM.affine_out.matrix().cast<double>(), 0.5, 0.1);             
+                
+                affine_imu_to_map = LM.affine_out;
+                Affine3f2Trans(affine_imu_to_map,transformTobeMapped);
+                // printTrans("trans: ",transformTobeMapped);
+            }
+     
             // for recording mapping logs
             vector<double> tmp;
             tmp.push_back((double)cloudInfoTime);  //1
@@ -1918,11 +1982,10 @@ public:
             // tmp.push_back(LM.surfPointCorrNum);
             float transO2M[6];
             Affine3f2Trans(affine_odom_to_map, transO2M);
-
             tmp.push_back(transO2M[1]); // only need pitch and yaw
             tmp.push_back(transO2M[2]);
-            tmp.push_back(Tgl(0,3));
-            tmp.push_back(Tgl(1,3)); // why NAN???
+            tmp.push_back(0);
+            tmp.push_back(0); // why NAN???
             if (mappingTimeVec.empty())
                 tmp.push_back(0);
             else
@@ -1937,6 +2000,84 @@ public:
             ROS_WARN("Not enough features! Only %d edge and %d planar features available.", lidarCloudCornerLastDSNum, lidarCloudSurfLastDSNum);
         }
 
+    }
+
+    void resetISAM(){
+        ISAM2Params optParameters;
+        optParameters.relinearizeThreshold = 0.1;
+        optParameters.relinearizeSkip = 1;
+        isam = new ISAM2(optParameters); // why it is okay for liosam not to add "new"?
+
+        gtsam::NonlinearFactorGraph newGraphFactors;
+        gtSAMgraph = newGraphFactors;
+    }
+    Eigen::Affine3f gtsamOptimize(Eigen::Affine3f odometryPose, Eigen::Affine3f globalMatchingPose, float globalError)
+    {
+        static int idx = 0;
+        static bool inited = false;
+
+        if (idx == 100){
+            // neglect inheriting covariance for now
+            inited = false;
+            resetISAM();
+            idx = 0;
+        }
+        
+        if (inited == false)
+        {
+            noiseModel::Diagonal::shared_ptr priorNoise = noiseModel::Diagonal::Variances((Vector(6) << 1e-2, 1e-2, 1e-2, 1e-1, 1e-1, 1e-1).finished()); // rad*rad, meter*meter
+            gtsam::Pose3 posePrior = Affine3f2gtsamPose(odometryPose);
+            gtSAMgraph.add(PriorFactor<Pose3>(idx, posePrior, priorNoise));
+            initialEstimate.insert(idx, posePrior);           
+            inited = true;
+
+        }
+        else
+        {
+            gtsam::Pose3 poseFrom = Affine3f2gtsamPose(lastOdometryPose);
+            noiseModel::Diagonal::shared_ptr odometryNoise = noiseModel::Diagonal::Variances((Vector(6) <<1e-2, 1e-2, 1e-2, 0.1, 0.1, 0.1 ).finished());
+            gtsam::Pose3 poseTo = Affine3f2gtsamPose(odometryPose);
+            gtSAMgraph.add(BetweenFactor<Pose3>(idx-1,idx, poseFrom.between(poseTo), odometryNoise));
+
+            noiseModel::Diagonal::shared_ptr corrNoise = noiseModel::Diagonal::Variances((Vector(6) << 0.1,  0.1, 0.1,
+            globalError, globalError, globalError).finished()); // rad*rad, meter*meter
+            gtsam::Pose3 posePrior = Affine3f2gtsamPose(globalMatchingPose);
+            gtSAMgraph.add(PriorFactor<Pose3>(idx, posePrior, corrNoise));
+            initialEstimate.insert(idx, posePrior);
+        }
+
+        lastOdometryPose = odometryPose;
+        isam->update(gtSAMgraph, initialEstimate);
+        isam->update();
+        gtSAMgraph.resize(0);
+        initialEstimate.clear();
+
+        isamCurrentEstimate = isam->calculateEstimate();
+        
+        auto latestEstimate = isamCurrentEstimate.at<Pose3>(isamCurrentEstimate.size() - 1);
+
+        tf::Quaternion q = tf::createQuaternionFromRPY(latestEstimate.rotation().roll(),latestEstimate.rotation().pitch(),latestEstimate.rotation().yaw());
+        geometry_msgs::PoseStamped odometry;
+        odometry.header.stamp = timeLidarInfoStamp;
+        odometry.header.frame_id = mapFrame;
+        odometry.pose.position.x = latestEstimate.translation().x();
+        odometry.pose.position.y = latestEstimate.translation().y();
+        odometry.pose.position.z = latestEstimate.translation().z();
+        odometry.pose.orientation.x = q.x();
+        odometry.pose.orientation.y = q.y();
+        odometry.pose.orientation.z = q.z();
+        odometry.pose.orientation.w = q.w();
+        global_path_gtsam.poses.push_back(odometry);
+        global_path_gtsam.header.stamp = odometry.header.stamp;
+        global_path_gtsam.header.frame_id = mapFrame;
+        pub_global_path_gtsam.publish(global_path_gtsam);
+
+        idx++;
+
+        Eigen::Affine3f after_smooth = pcl::getTransformation(latestEstimate.translation().x(),latestEstimate.translation().y(),latestEstimate.translation().z(),
+            latestEstimate.rotation().roll(),latestEstimate.rotation().pitch(),latestEstimate.rotation().yaw()
+        );
+        return after_smooth;
     }
 
     int saveFrame()
@@ -1973,13 +2114,9 @@ public:
         // indoor means almost all points are confined
         int count = 0;
         int sizeP = lidarCloudSurfLastDS->points.size();
-        // float thetaLiDAR = (cloudKeyPoses6D->points.back()).pitch; // runtime error for the first frame
-        // float thetaLiDAR = transformTobeMapped[1]; // thetaLiDAR > 0 is upward, since y is right
         for(int i = 0 ;i< sizeP; i++) 
         {
             PointType p = lidarCloudSurfLastDS->points[i];
-            // float theta = atan2(p.z,sqrt(p.x*p.x+p.y*p.y));         
-            // if ( thetaLiDAR -theta > 10 && pointDistance(p) < 10.0) count++;
             if (pointDistance(p) < 5.0) count++;
         }
 
@@ -2169,7 +2306,7 @@ public:
         int indoorJudgement = saveFrame();
         if ( indoorJudgement < 0)
             return;
-        // printTrans("Initial: ",transformTobeMapped);
+        
         isIndoorKeyframe.push_back(indoorJudgement);
         // odom factor
         addOdomFactor();

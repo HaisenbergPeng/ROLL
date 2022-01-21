@@ -1,11 +1,8 @@
-clc;
-clear;
-close all
 % folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noTMM";
-folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2";
-% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noEdge";
+% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2";
+folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noEdge";
 
-date = "2012-05-11";
+date = "2012-02-02";
 logFilePath = folder+"/"+date+"/map_pcd/mappingError.txt";
 % poseFilePath = folder+"/"+date+"/map_pcd/path_mapping.txt";
 poseFilePath = folder+"/"+date+"/map_pcd/path_vinsfusion.txt";
@@ -117,10 +114,10 @@ hold on
 plot(matGT(:,2),matGT(:,3));
 plot(matPose(idxOver1m,2),matPose(idxOver1m,3),".","MarkerSize",4);
 
-figure(3)
-plot(timeLog,logData{7}-logData{7}(1));
-hold on
-plot(timeLog,logData{8}-logData{8}(1));
+% figure(3)
+% plot(timeLog,logData{7}-logData{7}(1));
+% hold on
+% plot(timeLog,logData{8}-logData{8}(1));
 % plot(timePose-timePose(1),matPose(:,2))
 % plot(timeLog,logData{9});
 % plot(timeLog,logData{10});
@@ -128,7 +125,6 @@ plot(timeLog,logData{8}-logData{8}(1));
 
 figure(4)
 histogram(ateError);
-hold on
 % 
 % figure(5)
 % histogram(inlierRatio2)

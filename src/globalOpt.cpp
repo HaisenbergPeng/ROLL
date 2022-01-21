@@ -10,12 +10,14 @@
  *******************************************************/
 
 // adapted for global loc
+// 1. add init function;
+// 2. add sliding-window opt.
+// 3. add outlier detection
 
 #include "globalOpt.h"
 #include "Factors.h"
-double sta[6];
 
-GlobalOptimization::GlobalOptimization(int maxNo, float ratio)
+GlobalOptimization::GlobalOptimization(int maxNo)
 {
 	initGPS = false;
     newGPS = false;
@@ -23,8 +25,16 @@ GlobalOptimization::GlobalOptimization(int maxNo, float ratio)
 	WGlobal_T_WLocal = Eigen::Matrix4d::Identity();
     threadOpt = std::thread(&GlobalOptimization::optimize, this);
     maxFrameNum = maxNo;
-    globalLocalRatio = ratio;
+
+    reInitialize = false;
+    Tacc = Eigen::Matrix4d::Identity();
+    backupTgl = Eigen::Matrix4d::Identity();
     
+}
+void GlobalOptimization::setTgl(Eigen::Matrix4d mat)
+{
+    WGlobal_T_WLocal = mat;
+    backupTgl = mat;
 }
 
 GlobalOptimization::~GlobalOptimization()
@@ -32,23 +42,6 @@ GlobalOptimization::~GlobalOptimization()
     threadOpt.detach();
 }
 
-void GlobalOptimization::statistics(const map<double,double> m, double &mean, double &std)
-{
-    int len = m.size();
-    if (m.empty()) return;
-    for (auto i:m)
-        mean += i.second;
-    mean = mean/len;
-    for(auto i:m)
-    {
-        std += (i.second-mean)*(i.second-mean);
-    }
-    if (len == 1) {
-        std = 0;
-        return;
-    }
-    std = sqrt(std/(len-1));
-}
 void GlobalOptimization::affine2qt(const Eigen::Matrix4d aff, Eigen::Vector3d &p, Eigen::Quaterniond &q)
 {
     q = Eigen::Quaterniond(aff.block<3,3>(0,0));
@@ -96,6 +89,15 @@ void GlobalOptimization::getGlobalOdom(Eigen::Vector3d &odomP, Eigen::Quaternion
     odomQ = lastQ;
 }
 
+void GlobalOptimization::getGlobalAffine(Eigen::Affine3f &Tml)
+{
+    // need to wait for the 1st opt. completion
+    Eigen::Matrix4d tmp;
+    tmp.block<3,3>(0,0) = lastQ.toRotationMatrix();
+    tmp.block<3,1>(0,3) = lastP;
+    Tml = tmp.cast<float>();
+}
+
 void GlobalOptimization::getTgl(Eigen::Matrix4d &tgl)
 {
     tgl = WGlobal_T_WLocal;
@@ -114,33 +116,60 @@ void GlobalOptimization::inputGlobalLocPose(double t, Eigen::Matrix4d affine, do
     // vector<double> globalLocPose{locP.x(), locP.y(), locP.z(),t_error};
     // globalLocPoseMap[t] = globalLocPose; 
 
-    if ((int)globalLocPoseMap.size() > globalLocalRatio*maxFrameNum) // global loc frequency is around 1/3 of fastlio odometry
+    if (reInitialize == true && (int)globalLocPoseMap.size() < 10) 
     {
-        globalLocPoseMap.erase((globalLocPoseMap.begin())->first);
+        mPoseMap.unlock();
+        return;
     }
     newGlobalLocPose = true;
+    
     mPoseMap.unlock();
 }
 
+void GlobalOptimization::resetOptimization(Eigen::Matrix4d Tgl)
+{
+    // cout<<"too much jump in Tgl change, forfeit estimate:  Tgl change "<<deltaTransGL<<endl;
+    WGlobal_T_WLocal = Tgl;
+    while (globalLocPoseMap.empty() == false)
+    {
+        // should be thread safe
+        globalLocPoseMap.erase((globalLocPoseMap.begin())->first);
+    }
+    while (localPoseMap.empty() == false)
+    {
+        // should be thread safe
+        localPoseMap.erase((localPoseMap.begin())->first);
+        globalPoseMap.erase((globalPoseMap.begin())->first);
+    }
+    // wrong!
+    globalLocPoseMap.clear();
+    globalPoseMap.clear();
+    localPoseMap.clear();
+    reInitialize = true;
+
+}
 void GlobalOptimization::optimize()
 {
     while(true)
     {
         if(newGlobalLocPose)
         {
+            if (reInitialize == true) reInitialize = false;
+            TicToc opt_time;
             newGlobalLocPose = false;
             // printf("global optimization using global localization and odometry\n");
             TicToc globalOptimizationTime;
 
             ceres::Problem problem;
             ceres::Solver::Options options;
-            options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+            // options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+            options.linear_solver_type = ceres::DENSE_QR;
             //options.minimizer_progress_to_stdout = true;
             //options.max_solver_time_in_seconds = SOLVER_TIME * 3;
             options.max_num_iterations = 5;
             ceres::Solver::Summary summary;
             ceres::LossFunction *loss_function;
-            loss_function = new ceres::HuberLoss(1.0);
+            loss_function = new ceres::HuberLoss(0.5);
             ceres::LocalParameterization* local_parameterization = new ceres::QuaternionParameterization();
 
             //add param
@@ -152,8 +181,6 @@ void GlobalOptimization::optimize()
             double q_array[length][4];
             map<double, vector<double>>::iterator iter;
             iter = globalPoseMap.begin();  //using odomTOmap value for initial guess 
-
-            // optimize the poses at a gps frequency
             for (int i = 0; i < length; i++, iter++)
             {
                 t_array[i][0] = iter->second[0];
@@ -171,6 +198,7 @@ void GlobalOptimization::optimize()
             // cout<<" pose no. before opt "<< length<<endl;
             map<double, vector<double>>::iterator iterVIO, iterVIONext, iterGlobalLoc;
             int i = 0;
+            int found  = 0;
             // int outlierNO = 0;
             for (iterVIO = localPoseMap.begin(); iterVIO != localPoseMap.end(); iterVIO++, i++)
             {
@@ -203,26 +231,6 @@ void GlobalOptimization::optimize()
                 iterGlobalLoc = globalLocPoseMap.find(t); // synchronized global loc pose
                 if (iterGlobalLoc != globalLocPoseMap.end())
                 {
-                    // if (length > 99)
-                    // {
-                    //     // get rid of outliers: not working, too many outliers
-                    //     Eigen::Matrix4d odomPose = Eigen::Matrix4d::Identity(); 
-                    //     Eigen::Matrix4d globalPose = Eigen::Matrix4d::Identity();
-                    //     odomPose.block<3, 3>(0, 0) = Eigen::Quaterniond(localPoseMap[t][3], localPoseMap[t][4], 
-                    //                                     localPoseMap[t][5], localPoseMap[t][6]).toRotationMatrix();
-                    //     odomPose.block<3, 1>(0, 3) = Eigen::Vector3d(localPoseMap[t][0], localPoseMap[t][1], localPoseMap[t][2]);
-                    //     globalPose.block<3, 3>(0, 0) = Eigen::Quaterniond(iterGlobalLoc->second[0], iterGlobalLoc->second[1], 
-                    //                                                     iterGlobalLoc->second[2], iterGlobalLoc->second[3]).toRotationMatrix();
-                    //     globalPose.block<3, 1>(0, 3) = Eigen::Vector3d(iterGlobalLoc->second[4],iterGlobalLoc->second[5],iterGlobalLoc->second[6]);
-                    //     Eigen::Matrix4d Tgl = globalPose * odomPose.inverse();
-
-                    //     if (fabs(Tgl(0,3)-sta[0])>3*sta[1] || fabs(Tgl(1,3)-sta[2])>3*sta[3] || fabs(Tgl(2,3)-sta[4])>3*sta[5])
-                    //     {
-                    //         outlierNO++;
-                    //         continue;
-                    //     }
-                    // }
-
                         
                     // cout<<"found corresponding global loc pose "<<endl;
                     ceres::CostFunction* global_loc_function = globalTError::Create(iterGlobalLoc->second[0], iterGlobalLoc->second[1], 
@@ -230,47 +238,60 @@ void GlobalOptimization::optimize()
                                                                        iterGlobalLoc->second[4],iterGlobalLoc->second[5],iterGlobalLoc->second[6],
                                                                        iterGlobalLoc->second[7],iterGlobalLoc->second[8]);
                     
-                    problem.AddResidualBlock(global_loc_function, loss_function, q_array[i],t_array[i]);
+                    problem.AddResidualBlock(global_loc_function, loss_function, q_array[i], t_array[i]);
 
                     // ceres::CostFunction* global_loc_function = TError::Create(iterGlobalLoc->second[0], iterGlobalLoc->second[1], 
-                    //                                                    iterGlobalLoc->second[2], iterGlobalLoc->second[3]);
+                    //                                                    iterGlobalLoc->second[2], iterGlobalLoc->second[7]);
                     
                     // problem.AddResidualBlock(global_loc_function, loss_function, t_array[i]);
+                    found++;
+                    Eigen::Matrix4d local = Eigen::Matrix4d::Identity();
+                    Eigen::Matrix4d global = Eigen::Matrix4d::Identity();
+                    global.block<3, 3>(0, 0) = Eigen::Quaterniond(iterGlobalLoc->second[3], iterGlobalLoc->second[4], 
+                                                                        iterGlobalLoc->second[5], iterGlobalLoc->second[6]).toRotationMatrix();
+                    global.block<3, 1>(0, 3) = Eigen::Vector3d(iterGlobalLoc->second[0], iterGlobalLoc->second[1], iterGlobalLoc->second[2]);
+                    local.block<3, 3>(0, 0) = Eigen::Quaterniond(iterVIO->second[3], iterVIO->second[4], 
+                                                                        iterVIO->second[5], iterVIO->second[6]).toRotationMatrix();
+                    local.block<3, 1>(0, 3) = Eigen::Vector3d(iterVIO->second[0], iterVIO->second[1], iterVIO->second[2]);
+                    backupTgl = global*local.inverse(); // get the newest Tgl as backup
                 }
 
             }
+
             
+            // cout<<"found: "<<found<<endl;
             ceres::Solve(options, &problem, &summary);
             // std::cout << summary.BriefReport() << "\n";
 
             // update global pose
             iter = globalPoseMap.begin();
-            map<double,double> xGL;
-            map<double,double> yGL;
-            map<double,double> zGL;
-            
-            // Eigen::Matrix4d backup = WGlobal_T_WLocal;
+
+            Eigen::Matrix4d start;
+            Eigen::Matrix4d end;
+            Eigen::Matrix4d WVIO_T_body = Eigen::Matrix4d::Identity(); 
+            Eigen::Matrix4d WGPS_T_body = Eigen::Matrix4d::Identity();
+        
             for (int i = 0; i < length; i++, iter++)
             {
-            	vector<double> globalPose{t_array[i][0], t_array[i][1], t_array[i][2],
-            							  q_array[i][0], q_array[i][1], q_array[i][2], q_array[i][3]};
-            	iter->second = globalPose;
+                // cout<<"i "<<i<<"length :"<<length<<endl;
+                vector<double> globalPose{t_array[i][0], t_array[i][1], t_array[i][2],
+                                        q_array[i][0], q_array[i][1], q_array[i][2], q_array[i][3]};
+                iter->second = globalPose;
                 // only output the lastest
-            	// if(i == length - 1)
-            	// {
-            	//     Eigen::Matrix4d WVIO_T_body = Eigen::Matrix4d::Identity(); 
-            	//     Eigen::Matrix4d WGPS_T_body = Eigen::Matrix4d::Identity();
-            	//     double t = iter->first;
-            	//     WVIO_T_body.block<3, 3>(0, 0) = Eigen::Quaterniond(localPoseMap[t][3], localPoseMap[t][4], 
-            	//                                                        localPoseMap[t][5], localPoseMap[t][6]).toRotationMatrix();
-            	//     WVIO_T_body.block<3, 1>(0, 3) = Eigen::Vector3d(localPoseMap[t][0], localPoseMap[t][1], localPoseMap[t][2]);
-            	//     WGPS_T_body.block<3, 3>(0, 0) = Eigen::Quaterniond(globalPose[3], globalPose[4], 
-            	//                                                         globalPose[5], globalPose[6]).toRotationMatrix();
-            	//     WGPS_T_body.block<3, 1>(0, 3) = Eigen::Vector3d(globalPose[0], globalPose[1], globalPose[2]);
-            	//     WGlobal_T_WLocal = WGPS_T_body * WVIO_T_body.inverse();
-            	// }
-                Eigen::Matrix4d WVIO_T_body = Eigen::Matrix4d::Identity(); 
-                Eigen::Matrix4d WGPS_T_body = Eigen::Matrix4d::Identity();
+                // if(i == length - 1)
+                // {
+                //     Eigen::Matrix4d WVIO_T_body = Eigen::Matrix4d::Identity(); 
+                //     Eigen::Matrix4d WGPS_T_body = Eigen::Matrix4d::Identity();
+                //     double t = iter->first;
+                //     WVIO_T_body.block<3, 3>(0, 0) = Eigen::Quaterniond(localPoseMap[t][3], localPoseMap[t][4], 
+                //                                                        localPoseMap[t][5], localPoseMap[t][6]).toRotationMatrix();
+                //     WVIO_T_body.block<3, 1>(0, 3) = Eigen::Vector3d(localPoseMap[t][0], localPoseMap[t][1], localPoseMap[t][2]);
+                //     WGPS_T_body.block<3, 3>(0, 0) = Eigen::Quaterniond(globalPose[3], globalPose[4], 
+                //                                                         globalPose[5], globalPose[6]).toRotationMatrix();
+                //     WGPS_T_body.block<3, 1>(0, 3) = Eigen::Vector3d(globalPose[0], globalPose[1], globalPose[2]);
+                //     WGlobal_T_WLocal = WGPS_T_body * WVIO_T_body.inverse();
+                // }
+
                 double t = iter->first;
                 WVIO_T_body.block<3, 3>(0, 0) = Eigen::Quaterniond(localPoseMap[t][3], localPoseMap[t][4], 
                                                                     localPoseMap[t][5], localPoseMap[t][6]).toRotationMatrix();
@@ -278,34 +299,29 @@ void GlobalOptimization::optimize()
                 WGPS_T_body.block<3, 3>(0, 0) = Eigen::Quaterniond(globalPose[3], globalPose[4], 
                                                                     globalPose[5], globalPose[6]).toRotationMatrix();
                 WGPS_T_body.block<3, 1>(0, 3) = Eigen::Vector3d(globalPose[0], globalPose[1], globalPose[2]);
+
                 WGlobal_T_WLocal = WGPS_T_body * WVIO_T_body.inverse();
-                xGL[t] = WGlobal_T_WLocal(0,3);
-                yGL[t] = WGlobal_T_WLocal(1,3);
-                zGL[t] = WGlobal_T_WLocal(2,3);
+
+                if (i == 0 ) start = WGlobal_T_WLocal;
+                if (i == length - 1 ) end = WGlobal_T_WLocal;
             }
-            // stupid! they are coupled!
-            // statistics(xGL,sta[0],sta[1]);
-            // statistics(yGL,sta[2],sta[3]);
-            // statistics(zGL,sta[4],sta[5]);
-            // xGL.clear();
-            // yGL.clear();
-            // zGL.clear();
 
-            // cout<<"Tgl: "<<WGlobal_T_WLocal<<endl;
-            // cout<<"mean x: "<<sta[0]<<" std x: "<<sta[1]<<endl;
-            // cout<<"mean y: "<<sta[2]<<" std y: "<<sta[3]<<endl;
-            // cout<<"mean z: "<<sta[4]<<" std z: "<<sta[5]<<endl;
-            // double stdGL = sqrt(sta[1]*sta[1]+sta[3]*sta[3]+sta[5]*sta[5]);
-            // cout<<"outlier num: "<<outlierNO<<endl;
-            // cout<<"translation std: "<<stdGL<<endl;
-            // cout<<"global time "<<globalOptimizationTime.toc()<<" ms"<<endl;
-            // cout<<"pose size after opt:"<<globalPoseMap.size()<<endl;
 
-            // if (stdGL > 1.0)                WGlobal_T_WLocal = backup;
+            // Tgl change too much, forfeit this optimization
+            Eigen::Matrix4d TglDelta = start.inverse()*end;
+            // cout<<"x y z: "<<TglDelta(0,3)<<" "<<TglDelta(1,3)<<" "<<TglDelta(2,3)<<endl;
+            double deltaTransGL = sqrt(TglDelta(0,3)*TglDelta(0,3) +  TglDelta(1,3)*TglDelta(1,3) + TglDelta(2,3)*TglDelta(2,3) );
+
+            // cout<<"Tgl change "<<deltaTransGL<<endl;
+            if ( deltaTransGL > 0.5)
+            {
+                resetOptimization(backupTgl);
+            }
+            // cout<<"optimization takes: "<<opt_time.toc()<<" ms"<<endl;
             mPoseMap.unlock();
         }
         // waiting for poses to be accumulated
-        std::chrono::milliseconds dura(1000);
+        std::chrono::milliseconds dura(500);
         std::this_thread::sleep_for(dura);
     }
 	return;
