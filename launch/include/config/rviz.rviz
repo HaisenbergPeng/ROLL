@@ -467,9 +467,9 @@ Visualization Manager:
           Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
-          Max Intensity: 30.0652256
+          Max Intensity: 30.0996399
           Min Color: 0; 0; 0
-          Min Intensity: 0.00122227543
+          Min Intensity: 0.000257587992
           Name: Map (local_temporal)
           Position Transformer: XYZ
           Queue Size: 10
@@ -499,7 +499,7 @@ Visualization Manager:
           Max Color: 255; 255; 255
           Max Intensity: 30.1000004
           Min Color: 0; 0; 0
-          Min Intensity: 0.000215452892
+          Min Intensity: 0.000208847807
           Name: Map (global)
           Position Transformer: XYZ
           Queue Size: 10
@@ -663,7 +663,7 @@ Visualization Manager:
           Use Fixed Frame: true
           Use rainbow: true
           Value: false
-      Enabled: false
+      Enabled: true
       Name: Mapping
     - Class: rviz/Image
       Enabled: false

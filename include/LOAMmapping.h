@@ -90,17 +90,17 @@ class LOAMmapping : public ParamServer
             {
                 lidarCloudOri->clear();
                 coeffSel->clear();
-                // TicToc corner;
-                // cornerOptimization(iterCount);
-                // cornerTime += corner.toc();
+                TicToc corner;
+                cornerOptimization(iterCount);
+                cornerTime += corner.toc();
                 TicToc surf;
                 surfOptimization(iterCount);
                 surfTime += surf.toc();
                 combineOptimizationCoeffs();
 
-                // inlier_ratio2 = (double)(surfPointCorrNum + edgePointCorrNum)/( lidarCloudSurfLastDSNum+ lidarCloudCornerLastDSNum);
+                inlier_ratio2 = (double)(surfPointCorrNum + edgePointCorrNum)/( lidarCloudSurfLastDSNum+ lidarCloudCornerLastDSNum);
                 // surf only
-                inlier_ratio2 = (double)surfPointCorrNum/ lidarCloudSurfLastDSNum;
+                // inlier_ratio2 = (double)surfPointCorrNum/ lidarCloudSurfLastDSNum;
 
                 // it is actually for map extension, otherwise cv error happens
                 // 0.2 or higher would seriously deteriarate the performance

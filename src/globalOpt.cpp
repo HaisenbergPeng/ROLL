@@ -130,18 +130,18 @@ void GlobalOptimization::resetOptimization(Eigen::Matrix4d Tgl)
 {
     // cout<<"too much jump in Tgl change, forfeit estimate:  Tgl change "<<deltaTransGL<<endl;
     WGlobal_T_WLocal = Tgl;
-    while (globalLocPoseMap.empty() == false)
-    {
-        // should be thread safe
-        globalLocPoseMap.erase((globalLocPoseMap.begin())->first);
-    }
-    while (localPoseMap.empty() == false)
-    {
-        // should be thread safe
-        localPoseMap.erase((localPoseMap.begin())->first);
-        globalPoseMap.erase((globalPoseMap.begin())->first);
-    }
-    // wrong!
+    // while (globalLocPoseMap.empty() == false)
+    // {
+    //     // should be thread safe
+    //     globalLocPoseMap.erase((globalLocPoseMap.begin())->first);
+    // }
+    // while (localPoseMap.empty() == false)
+    // {
+    //     // should be thread safe
+    //     localPoseMap.erase((localPoseMap.begin())->first);
+    //     globalPoseMap.erase((globalPoseMap.begin())->first);
+    // }
+    // OR
     globalLocPoseMap.clear();
     globalPoseMap.clear();
     localPoseMap.clear();
@@ -162,8 +162,8 @@ void GlobalOptimization::optimize()
 
             ceres::Problem problem;
             ceres::Solver::Options options;
-            // options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
-            options.linear_solver_type = ceres::DENSE_QR;
+            options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+            // options.linear_solver_type = ceres::DENSE_QR;
             //options.minimizer_progress_to_stdout = true;
             //options.max_solver_time_in_seconds = SOLVER_TIME * 3;
             options.max_num_iterations = 5;
@@ -313,10 +313,11 @@ void GlobalOptimization::optimize()
             double deltaTransGL = sqrt(TglDelta(0,3)*TglDelta(0,3) +  TglDelta(1,3)*TglDelta(1,3) + TglDelta(2,3)*TglDelta(2,3) );
 
             // cout<<"Tgl change "<<deltaTransGL<<endl;
-            if ( deltaTransGL > 0.5)
-            {
-                resetOptimization(backupTgl);
-            }
+            // w.o. consistency check
+            // if ( deltaTransGL > 0.5)
+            // {
+            //     resetOptimization(backupTgl);
+            // }
             // cout<<"optimization takes: "<<opt_time.toc()<<" ms"<<endl;
             mPoseMap.unlock();
         }

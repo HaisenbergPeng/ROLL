@@ -2,7 +2,7 @@
 % folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2";
 folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noEdge";
 
-date = "2012-02-02";
+date = "2012-06-15";
 logFilePath = folder+"/"+date+"/map_pcd/mappingError.txt";
 % poseFilePath = folder+"/"+date+"/map_pcd/path_mapping.txt";
 poseFilePath = folder+"/"+date+"/map_pcd/path_vinsfusion.txt";

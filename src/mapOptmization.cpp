@@ -670,6 +670,7 @@ public:
                     // cout<<"publish: "<<publish.toc()<<endl;
                     // printTrans("after mapping: ",transformTobeMapped);
                     mappingTimeVec.push_back(mapping.toc());
+                    // ROS_INFO_STREAM("At time "<< cloudInfoTime - rosTimeStart);
                     if (goodToMergeMap)
                     {
                         if (mapUpdateEnabled)

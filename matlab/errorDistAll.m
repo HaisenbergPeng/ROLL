@@ -2,14 +2,14 @@ clc;
 clear;
 close all
 startDate = "2012-01-15";
-%% TMM
-dateLists = ["2012-02-02","2012-03-17","2012-04-29",...
-    "2012-05-11","2012-06-15","2012-08-04","2012-11-17","2013-01-10","2013-02-23"]';
-folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2";
+% %% TMM
+% dateLists = ["2012-02-02","2012-03-17","2012-04-29",...
+%     "2012-05-11","2012-06-15","2012-08-04","2012-11-17","2013-01-10","2013-02-23"]';
+% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2";
 
-% %% no TMM
-% dateLists = ["2012-02-02","2012-03-17","2012-04-29","2012-06-15","2012-08-04","2013-01-10","2013-02-23"]';
-% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noTMM";
+%% no TMM
+dateLists = ["2012-02-02","2012-03-17","2012-04-29","2012-05-11"]';
+folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noTMM";
 
 % %% No edge
 % dateLists = ["2012-02-02","2012-03-17","2012-04-29","2012-05-11"]';
