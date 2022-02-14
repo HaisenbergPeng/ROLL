@@ -313,11 +313,11 @@ void GlobalOptimization::optimize()
             double deltaTransGL = sqrt(TglDelta(0,3)*TglDelta(0,3) +  TglDelta(1,3)*TglDelta(1,3) + TglDelta(2,3)*TglDelta(2,3) );
 
             // cout<<"Tgl change "<<deltaTransGL<<endl;
-            // w.o. consistency check
-            // if ( deltaTransGL > 0.5)
-            // {
-            //     resetOptimization(backupTgl);
-            // }
+            // w. consistency check
+            if ( deltaTransGL > 0.5)
+            {
+                resetOptimization(backupTgl);
+            }
             // cout<<"optimization takes: "<<opt_time.toc()<<" ms"<<endl;
             mPoseMap.unlock();
         }

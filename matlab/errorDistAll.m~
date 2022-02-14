@@ -2,18 +2,18 @@ clc;
 clear;
 close all
 startDate = "2012-01-15";
-%% LOMAL
-dateLists = ["2012-02-02","2012-03-17","2012-04-29",...
-    "2012-05-11","2012-06-15","2012-08-04","2012-11-17","2013-01-10","2013-02-23"]';
-folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2";
+% %% TMM
+% dateLists = ["2012-02-02","2012-03-17","2012-04-29",...
+%     "2012-05-11","2012-06-15","2012-08-04","2012-11-17","2013-01-10","2013-02-23"]';
+% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2";
 
-% %% no TMM
-% dateLists = ["2012-02-02","2012-03-17","2012-04-29","2012-05-11"]';
-% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noTMM";
+%% no TMM
+dateLists = ["2012-02-02","2012-03-17","2012-04-29","2012-05-11"]';
+folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noTMM";
 
-% %% no CC
+% %% No edge
 % dateLists = ["2012-02-02","2012-03-17","2012-04-29","2012-05-11"]';
-% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noCC";
+% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noEdge";
 
 setNum = length(dateLists);
 daysPassed = cntDays(startDate,dateLists);
@@ -33,13 +33,14 @@ TMMno = zeros(setNum,1);
 duration = zeros(setNum,1);
 mapExtension = cell(setNum,1);
 
+
 for iB=1:setNum
     date = dateLists{iB};
     disp("reading "+date);
     logFilePath = folder+"/"+date+"/map_pcd/mappingError.txt";
 %     poseFilePath = folder+"/"+date+"/map_pcd/path_mapping.txt";
-%     poseFilePath = folder+"/"+date+"/map_pcd/path_fusion.txt"; 
-    poseFilePath = folder+"/"+date+"/map_pcd/path_vinsfusion.txt";
+    poseFilePath = folder+"/"+date+"/map_pcd/path_fusion.txt"; 
+%     poseFilePath = folder+"/"+date+"/map_pcd/path_vinsfusion.txt";
     gtFilePath = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/"+date+"/groundtruth_"+date+".csv";
 
     %% log file reading
@@ -119,7 +120,7 @@ for iB=1:setNum
     locFrequency(iB) = lenPose/(timeGT(end)-timeGT(1));
     locFrequencyG(iB) = length(timeLog)/(timeGT(end)-timeGT(1));
     duration(iB) = (timeGT(end)-timeGT(1))/3600; 
-    successRate(iB) = length(find(ateError < 1.0))/10/(timeGT(end)-timeGT(1))*100;
+    successRate(iB) = length(find(ateError < 0.1))
     
     figure(2)
     idxOver1m = find(ateError>1.0);
@@ -136,7 +137,7 @@ xlabel("Localization error (m)");
 ylabel("Count");
 %% PLOT and SAVE
 T = table(dateLists,daysPassed,duration,meanError,stdError,maxError,percWithin01Meter,percWithin02Meter,...
-    percWithin05Meter,percWithinOneMeter,successRate, locFrequency,locFrequencyG,TMMno,mapExtension);
+    percWithin05Meter,percWithinOneMeter,locFrequency,locFrequencyG,TMMno,mapExtension);
 writetable(T,"loc_results_v3.xls");
 
 %% overall mean and std
@@ -144,8 +145,8 @@ ateAll = [];
 for i=1:setNum
     ateAll = [ateAll; ateError];
 end
-disp("mean error: "+ num2str(mean(ateAll)));
-disp("std error: " + num2str(std(ateAll)));
+mean(ateAll);
+std(ateAll);
 length(find(ateAll<1))/length(ateAll);
 
 %% error space distribution

@@ -1,19 +1,19 @@
 kloam:
   localizationMode: true
-  saveKeyframeMap: true
+  saveKeyframeMap: false
   savePCD: true
   savePose: true # for path recording purposes /reloc gt, save it to saveMapDirectory
   saveMatchingError: true
   mapUpdateEnabled: true
-  saveMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noCC/2012-02-02/map_pcd          
-  saveKeyframeMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noCC/2012-02-02/keyframes 
-  # loadKeyframeMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noTMM/2012-04-29/keyframes
+  saveMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noTMM/2012-02-02-succeed/map_pcd          
+  saveKeyframeMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noTMM/2012-02-02-succeed/keyframes 
+  # loadKeyframeMapDirectory:  /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2/2012-08-04/keyframes
   loadKeyframeMapDirectory: /media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2/2012-01-15-gt/keyframes
 
   saveRawCloud: false
   # temporary mapping mode
   inlierThreshold: 0.1 # if no serious map out-of-date, it suffice 99% of the time
-  startTemporaryMappingInlierRatioThre: 0.3 # only for map extension?
+  startTemporaryMappingInlierRatioThre: 0.3
   exitTemporaryMappingInlierRatioThre: 0.5
   slidingWindowSize: 30
 

@@ -5,7 +5,7 @@ folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noTMM";
 % folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2";
 % folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noEdge";
 
-date = "2012-05-11";
+date = "2012-03-17";
 logFilePath = folder+"/"+date+"/map_pcd/mappingError.txt";
 % poseFilePath = folder+"/"+date+"/map_pcd/path_mapping.txt";
 poseFilePath = folder+"/"+date+"/map_pcd/path_vinsfusion.txt";
@@ -133,3 +133,8 @@ hold on
 % figure(5)
 % histogram(inlierRatio2)
 % a=[timePose-timePose(1) ateError];
+
+figure(5)
+histogram(inlierRatio2);
+xlabel("Matching inlier ratio");
+ylabel("Count");
