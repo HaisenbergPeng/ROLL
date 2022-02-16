@@ -36,7 +36,7 @@ class LOAMmapping : public ParamServer
 
         double inlier_ratio = 0;
         double inlier_ratio2 = 0;
-        float cornerTime = 0, surfTime = 0;
+        float cornerTime = 0, surfTime = 0, optTime = 0;
         double regiError;
 
         double minEigen = 1e+6;
@@ -96,8 +96,9 @@ class LOAMmapping : public ParamServer
                 TicToc surf;
                 surfOptimization(iterCount);
                 surfTime += surf.toc();
+                TicToc opt;
                 combineOptimizationCoeffs();
-
+                optTime += opt.toc();
                 inlier_ratio2 = (double)(surfPointCorrNum + edgePointCorrNum)/( lidarCloudSurfLastDSNum+ lidarCloudCornerLastDSNum);
                 // surf only
                 // inlier_ratio2 = (double)surfPointCorrNum/ lidarCloudSurfLastDSNum;

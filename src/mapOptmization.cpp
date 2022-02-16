@@ -16,7 +16,6 @@
 #include <gtsam/inference/Symbol.h>
 
 #include <gtsam/nonlinear/ISAM2.h>
-#include"Scancontext.h"
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 #include"LOAMmapping.h"
@@ -637,18 +636,18 @@ public:
                 {
                     TicToc extract;
                     extractNearby();
-                    // cout<<"extract: "<<extract.toc()<<endl;
+                    cout<<"extract: "<<extract.toc()<<endl;
                     TicToc downsample;
                     downsampleCurrentScan();
-                    // cout<<"downsample: "<<downsample.toc()<<endl;
+                    cout<<"downsample: "<<downsample.toc()<<endl;
                     TicToc opt;
                     
                     scan2MapOptimization();
                     
-                    // float optTime = opt.toc();
-                    // cout<<"optimization: "<<optTime<<endl; // > 90% of the total time
+                    float optTime = opt.toc();
+                    cout<<"optimization: "<<optTime<<endl; // > 90% of the total time
                     
-                    TicToc optPose;
+                    // TicToc optPose;
                     if (localizationMode)
                     {
                         saveTemporaryKeyframes();
@@ -661,15 +660,16 @@ public:
                     }
                     // float optPoseTime = optPose.toc();
                     // cout<<"pose opt. takes "<< optPoseTime<<endl;
-                    // TicToc publish;
+                    TicToc publish;
                     publishLocalMap();
                     publishOdometry();
                     transformUpdate();
                     
                     frameTobeAbandoned = false;
-                    // cout<<"publish: "<<publish.toc()<<endl;
+                    cout<<"publish: "<<publish.toc()<<endl;
                     // printTrans("after mapping: ",transformTobeMapped);
                     mappingTimeVec.push_back(mapping.toc());
+                    cout<<"mapping time: "<<mappingTimeVec.back()<<endl;
                     // ROS_INFO_STREAM("At time "<< cloudInfoTime - rosTimeStart);
                     if (goodToMergeMap)
                     {

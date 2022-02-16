@@ -1,5 +1,8 @@
 scripts/MISC
 src/MISC
+launch/MISC
+config/MISC
+matlab/results
 # Prerequisites
 *.d
 

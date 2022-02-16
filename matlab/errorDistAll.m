@@ -115,25 +115,42 @@ for iB=1:setNum
     stdError(iB) = std(ateError);
     meanError(iB) = mean(ateError);
     maxError(iB)= max(ateError);
-    TMMno(iB) = TMMcnt(isTMM);
+    [TMMno(iB), positions] = TMMcnt(isTMM);
     locFrequency(iB) = lenPose/(timeGT(end)-timeGT(1));
     locFrequencyG(iB) = length(timeLog)/(timeGT(end)-timeGT(1));
     duration(iB) = (timeGT(end)-timeGT(1))/3600; 
     successRate(iB) = length(find(ateError < 1.0))/10/(timeGT(end)-timeGT(1))*100;
     
-    figure(2)
-    idxOver1m = find(ateError>1.0);
-    plot(matPose(idxOver1m,2),matPose(idxOver1m,3),".","MarkerSize",10);
+
+%     figure(1)
+%     histogram(ateError,"DisplayStyle","stairs");
+%     hold on
+%     
+%     figure(2)
+%     idxOver1m = find(ateError>1.0);
+%     plot(matPose(idxOver1m,2),matPose(idxOver1m,3),".","MarkerSize",10);
+%     hold on
+    
+    figure(3)
+    y = matPose(:,3);
+    y(end) = nan;
+    patch(matPose(:,2),y,ateError,'EdgeColor','interp','MarkerFaceColor','flat');
     hold on
     
-    figure(1)
-    histogram(ateError,"DisplayStyle","stairs");
-    hold on
+    for iT = 1:TMMno(iB)
+        plot(matPose(positions(iT),2),matPose(positions(iT),3),'o','MarkerFaceColor','r');
+    end
+    
 end
-legend(dateLists);
+colorbar;
+% legend(dateLists);
 hold off
-xlabel("Localization error (m)");
-ylabel("Count");
+% xlabel("Localization error (m)");
+% ylabel("Count");
+
+figure(3)
+xlabel('X (m)');
+ylabel('Y (m)');
 %% PLOT and SAVE
 T = table(dateLists,daysPassed,duration,meanError,stdError,maxError,percWithin01Meter,percWithin02Meter,...
     percWithin05Meter,percWithinOneMeter,successRate, locFrequency,locFrequencyG,TMMno,mapExtension);
@@ -167,8 +184,8 @@ for i=1:floor(lenGT/10)
     tmi = Rmb*tbi +tmb;
     matGT(i,2:4) = tmi';
 end
-figure(2)
-plot(matGT(:,2),matGT(:,3));
+% figure(2)
+% plot(matGT(:,2),matGT(:,3));
 
 
 % a=[timePose-timePose(1) ateError];
@@ -180,11 +197,13 @@ function strPattern =strPatternGenerate(n)
 
 end
 
-function n = TMMcnt(x)
+function [n, positions] = TMMcnt(x)
     n=0;
+    positions = zeros(10,1);
     for i=1:length(x)-1
         if x(i+1) -x(i) > 0.9
             n = n+1;
+            positions(n) = i;
         end
     end
 end

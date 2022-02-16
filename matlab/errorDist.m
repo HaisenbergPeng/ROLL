@@ -135,6 +135,6 @@ hold on
 % a=[timePose-timePose(1) ateError];
 
 figure(5)
-histogram(inlierRatio2);
+h = histogram(inlierRatio2, 'Normalization','probability');
 xlabel("Matching inlier ratio");
-ylabel("Count");
+ylabel("Probability");
