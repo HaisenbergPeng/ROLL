@@ -636,16 +636,16 @@ public:
                 {
                     TicToc extract;
                     extractNearby();
-                    cout<<"extract: "<<extract.toc()<<endl;
+                    // cout<<"extract: "<<extract.toc()<<endl;
                     TicToc downsample;
                     downsampleCurrentScan();
-                    cout<<"downsample: "<<downsample.toc()<<endl;
+                    // cout<<"downsample: "<<downsample.toc()<<endl;
                     TicToc opt;
                     
                     scan2MapOptimization();
                     
                     float optTime = opt.toc();
-                    cout<<"optimization: "<<optTime<<endl; // > 90% of the total time
+                    // cout<<"optimization: "<<optTime<<endl; // > 90% of the total time
                     
                     // TicToc optPose;
                     if (localizationMode)
@@ -666,10 +666,10 @@ public:
                     transformUpdate();
                     
                     frameTobeAbandoned = false;
-                    cout<<"publish: "<<publish.toc()<<endl;
+                    // cout<<"publish: "<<publish.toc()<<endl;
                     // printTrans("after mapping: ",transformTobeMapped);
                     mappingTimeVec.push_back(mapping.toc());
-                    cout<<"mapping time: "<<mappingTimeVec.back()<<endl;
+                    // cout<<"mapping time: "<<mappingTimeVec.back()<<endl;
                     // ROS_INFO_STREAM("At time "<< cloudInfoTime - rosTimeStart);
                     if (goodToMergeMap)
                     {
@@ -682,7 +682,7 @@ public:
                         auto iteratorKeyFramesS = temporarySurfCloudKeyFrames.begin();
                         auto iteratorKeyFramesI = isIndoorKeyframeTMM.begin();
                         // usually added cloud would not be big so just leave the sparsification to savingMap
-                        ROS_INFO_STREAM("At time "<< cloudInfoTime - rosTimeStart<< " sec, Merged map has "<<(int)temporaryCloudKeyPoses3D->size()<< " key poses");
+                        // ROS_INFO_STREAM("At time "<< cloudInfoTime - rosTimeStart<< " sec, Merged map has "<<(int)temporaryCloudKeyPoses3D->size()<< " key poses");
                         while ((int)temporaryCloudKeyPoses3D->size() > slidingWindowSize)
                         {
                             // automatically +1

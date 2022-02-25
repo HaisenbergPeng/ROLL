@@ -1,11 +1,14 @@
-clc;
+% clc
 clear;
 close all
-folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noTMM";
-% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2";
-% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noEdge";
+%% Sometimes the code malfunctions and you will get wierd statistics;
+% don't know why so just reboot the MATLAB
+% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noTMM";
+folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2";
+% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/no_LIO";
+% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/LOAM";
 
-date = "2012-03-17";
+date = "2012-05-11";
 logFilePath = folder+"/"+date+"/map_pcd/mappingError.txt";
 % poseFilePath = folder+"/"+date+"/map_pcd/path_mapping.txt";
 poseFilePath = folder+"/"+date+"/map_pcd/path_vinsfusion.txt";
@@ -49,12 +52,12 @@ gtData = textscan(fID3, "%f%s%f%s%f%s%f%s%f%s%f%s%f");
 % downsample
 downsample = 10;
 lenGT = length(gtData{1});
-matGT = zeros(floor(lenGT/10),7);
-%% kloam+fastlio uses imu pose, so here convert body pose to imu pose
+matGT = zeros(floor(lenGT/downsample),7);
+%% ROLL uses imu pose, so here convert body pose to imu pose
 tbi = [-0.11 -0.18 -0.71]';
-for i=1:floor(lenGT/10)
+for i=1:floor(lenGT/downsample)
     for j=1:7
-        matGT(i,j) = gtData{2*j-1}(10*i);
+        matGT(i,j) = gtData{2*j-1}(downsample*i);
     end
     Rmb = eul2rotm([ matGT(i,7),matGT(i,6),matGT(i,5)],"ZYX");
     tmb = matGT(i,2:4)';
@@ -65,34 +68,47 @@ end
 %% sync with time
 timeGT = matGT(:,1)/1e+6; % us -> sec
 timePose =  matPose(:,1)/1e+6;
-MDtimeGT = KDTreeSearcher(timeGT);
-[idx, D] = rangesearch(MDtimeGT,timePose,0.05);
-ateError = zeros(lenPose,1);
+% timeGT = timeGT -timeGT(1);
+% timePose = timePose - timePose(1);
+% MDtimeGT = KDTreeSearcher(timeGT);
+[idx, D] = rangesearch(timeGT,timePose,0.05);
+ateErrorINI = zeros(lenPose,1);
+yawError = zeros(lenPose,1);
 not_found = 0;
-
+idxC = 0;
 for i=1:lenPose
     if isempty(idx{i})
         not_found = not_found + 1;
         continue;    
     end
         %% rule out obvious wrong ground truth
-    if date=="2013-02-23" && matPose(i,2)>-310 && matPose(i,2)<-260&&...
+    if date=="2013-02-23" && matPose(i,2)>-310 && matPose(i,2)<-260 &&...
         matPose(i,3)>-450 && matPose(i,3)<-435
         continue;
     end
-    ateError(i) = norm(matPose(i,2:3)-matGT(idx{i}(1),2:3));
+    idxC = idxC + 1;
+%     ateError(i) = norm(matPose(i,2:3)-matGT(idx{i}(1),2:3));
+%     yawError(i) = 180/pi*(matPose(i,7)-matGT(idx{i}(1),7));
+    deltaT = transError(matGT(idx{i}(1),2:7),matPose(i,2:7));
+    ateErrorINI(idxC) = norm(deltaT(1:3,4));
+%     if ateErrorINI(idxC) > 10
+%         i
+%         matPose(i,1)-matGT(idx{i}(1),1)
+%         timePose(i)-timeGT(idx{i}(1))
+%         matPose(i,2:7)
+%     end
+    %% 2pi
+%     Ntmp = round(yawError(i)/360);
+%     yawError(i) = yawError(i) - Ntmp*360;
 %     if ateError(i)>1
 %         matGT(idx{i}(1),2:3)
 %     end
 end
-idx1 = find(ateError < 0.5);
-idx2 = find(ateError < 1.0);
+ateError = ateErrorINI(1:idxC);
 idxOver1m= find(ateError > 1.0);
-idxNotZero = find(ateError ~= 0);
 %% PLOT
 figure(1)
-
-plot(timePose(idxNotZero)-timePose(1),ateError(idxNotZero));
+plot(timePose-timePose(1),ateErrorINI);
 xlabel("Time (sec)");
 hold on
 % map extension
@@ -103,12 +119,14 @@ legend("Absolute localization error","Mapping inlier ratio","isTMM");
 % ylabel("Absolute trajectory error (m)");
 % legend("w. TM","w.o. TM");
 % saveas(1,date + "_ate_error.jpg");
-disp("mean error: "+mean(ateError))
-disp("std error: "+std(ateError))
+disp("RMSE error: "+norm(ateError)/sqrt(idxC))
 disp("max error: "+max(ateError))
-disp("<0.2 %: "+ num2str(length(find(ateError < 0.2))/lenPose))
-disp("<0.5 %: "+ num2str(length(idx1)/lenPose))
-disp("<1.0 %: "+ num2str(length(idx2)/lenPose))
+disp("Loc rate: "+length(ateError)/(timePose(end)-timePose(1)))
+disp("Success ratio: "+length(find(ateError < 2.0))/(timeGT(end)-timeGT(1))/10)
+disp("<0.1 %: "+ length(find(ateError < 0.1))/lenPose)
+disp("<0.2 %: "+ length(find(ateError < 0.2))/lenPose)
+disp("<0.5 %: "+ length(find(ateError < 0.5))/lenPose)
+disp("<1.0 %: "+ length(find(ateError < 1.0))/lenPose)
 
 figure(2)
 % plot(matPose(:,2),matPose(:,3),".");
@@ -117,24 +135,35 @@ hold on
 plot(matGT(:,2),matGT(:,3));
 plot(matPose(idxOver1m,2),matPose(idxOver1m,3),".","MarkerSize",4);
 
-figure(3)
-plot(timeLog,logData{7}-logData{7}(1));
-hold on
-plot(timeLog,logData{8}-logData{8}(1));
+% figure(3)
+% plot(timeLog,logData{7}-logData{7}(1));
+% hold on
+% plot(timeLog,logData{8}-logData{8}(1));
 % plot(timePose-timePose(1),matPose(:,2))
 % plot(timeLog,logData{9});
 % plot(timeLog,logData{10});
 % legend("x","y","xF","yF");
 
-figure(4)
-histogram(ateError);
-hold on
+% figure(4)
+% histogram(ateError);
+% hold on
 % 
 % figure(5)
 % histogram(inlierRatio2)
 % a=[timePose-timePose(1) ateError];
 
-figure(5)
-h = histogram(inlierRatio2, 'Normalization','probability');
-xlabel("Matching inlier ratio");
-ylabel("Probability");
+% figure(5)
+% h = histogram(inlierRatio2, 'Normalization','probability');
+% xlabel("Matching inlier ratio");
+% ylabel("Probability");
+
+function eT = transError(Vgt,V2)
+% input: x y z r p y
+    T1 = eye(4);
+    T2 = eye(4);
+    T1(1:3,1:3) = eul2rotm([Vgt(6),Vgt(5),Vgt(4)],"ZYX");
+    T2(1:3,1:3) = eul2rotm([V2(6),V2(5),V2(4)],"ZYX");
+    T1(1:3,4) = Vgt(1:3)';
+    T2(1:3,4) = V2(1:3)';
+    eT = T1\T2;    % equals to T1\T2
+end

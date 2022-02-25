@@ -27,15 +27,15 @@ from geometry_msgs.msg import Vector3, Quaternion
 from math import sin,cos
 # import scipy
 
-record_time = '2013-02-23'
-root_dir = '/media/binpeng/BIGLUCK/Datasets/NCLT/datasets'
-save_dir = '/media/binpeng/BIGLUCK/Datasets/NCLT/datasets'
+record_time = '2012-05-11'
+root_dir = '/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets'
+save_dir = '/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets'
 ms25_filename = os.path.join(root_dir, record_time,record_time,'ms25.csv')
 ms25E_filename = os.path.join(root_dir, record_time,record_time,'ms25_euler.csv')
 gps_filename = os.path.join(root_dir, record_time,record_time,'gps_rtk.csv')
 velo_data_dir = os.path.join(root_dir, record_time,record_time,'velodyne_sync')
-gt_filename = os.path.join(root_dir,'groundtruth_'+record_time+'.csv')
-gt_cov_filename = os.path.join(root_dir,'cov_'+record_time+'.csv')
+gt_filename = os.path.join(root_dir,record_time,'groundtruth_'+record_time+'.csv')
+gt_cov_filename = os.path.join(root_dir,record_time,'cov_'+record_time+'.csv')
 velo_frame_id = '/lidar'
 imu_frame_id = '/imu'
 gt_frame_id = '/body'
@@ -44,7 +44,7 @@ gt_topic = '/ground_truth'
 gps_rtk_topic = '/fix'
 write_lidar_data = True
 if write_lidar_data:
-    bag_name = os.path.join(save_dir, record_time, record_time+'.bag')
+    bag_name = os.path.join(save_dir, record_time, record_time+'_sync.bag')
 else:
     bag_name = os.path.join(save_dir, record_time, record_time+'._no_vel.bag')
 # print(iterable)

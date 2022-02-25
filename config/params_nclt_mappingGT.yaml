@@ -1,8 +1,8 @@
 kloam:
   localizationMode: false
-  saveKeyframeMap: true 
-  savePose: true # for path recording purposes /reloc gt, save it to saveMapDirectory
-  savePCD: true
+  saveKeyframeMap: false 
+  savePose: false # for path recording purposes /reloc gt, save it to saveMapDirectory
+  savePCD: false
   saveMapDirectory:  "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2/2012-02-02-gt/map_pcd"           
   saveKeyframeMapDirectory:  "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2/2012-02-02-gt/keyframes" # for relocalization
   saveRawCloud: false

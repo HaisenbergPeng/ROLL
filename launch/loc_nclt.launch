@@ -10,10 +10,9 @@
     <node pkg="$(arg project)" type="$(arg project)_scanRegistration"     name="$(arg project)_scanRegistration"      output="screen"     required="true"/>
     <!-- <node pkg="$(arg project)" type="$(arg project)_lidarOdometry"      name="$(arg project)_lidarOdometry"       output="screen"     respawn ="true"/> -->
     <node pkg="$(arg project)" type="$(arg project)_mapOptmization"      name="$(arg project)_mapOptmization"       output="screen"     required="true"/>
-    a    
+        
     <include file="$(find fast_lio)/launch/mapping_nclt.launch" />
-
-
+    
     <!--- Robot State TF -->
     <include file="$(find kloam)/launch/include/module_robot_state_publisher.launch" />
 

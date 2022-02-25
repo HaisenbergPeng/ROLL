@@ -1,4 +1,4 @@
-clc;
+% clc;
 clear;
 close all
 startDate = "2012-01-15";
@@ -19,6 +19,7 @@ setNum = length(dateLists);
 daysPassed = cntDays(startDate,dateLists);
 
 ateErrorCell = cell(setNum,1);
+
 percWithinOneMeter = zeros(setNum,1);
 percWithin05Meter = zeros(setNum,1);
 percWithin02Meter = zeros(setNum,1);
@@ -26,6 +27,10 @@ percWithin01Meter = zeros(setNum,1);
 stdError = zeros(setNum,1);
 meanError = zeros(setNum,1);
 maxError = zeros(setNum,1);
+
+RMSE = zeros(setNum,1);
+maxTUM = zeros(setNum,1);
+
 locFrequency =  zeros(setNum,1);
 locFrequencyG =  zeros(setNum,1);
 successRate =  zeros(setNum,1);
@@ -74,12 +79,12 @@ for iB=1:setNum
     % downsample
     downsample = 10;
     lenGT = length(gtData{1});
-    matGT = zeros(floor(lenGT/10),7);
-    %% kloam+fastlio uses imu pose, so here convert body pose to imu pose
+    matGT = zeros(floor(lenGT/downsample),7);
+    %% ROLL uses imu pose, so here convert body pose to imu pose
     tbi = [-0.11 -0.18 -0.71]';
-    for i=1:floor(lenGT/10)
+    for i=1:floor(lenGT/downsample)
         for j=1:7
-            matGT(i,j) = gtData{2*j-1}(10*i);
+            matGT(i,j) = gtData{2*j-1}(downsample*i);
         end
         Rmb = eul2rotm([ matGT(i,7),matGT(i,6),matGT(i,5)],"ZYX");
         tmb = matGT(i,2:4)';
@@ -91,40 +96,60 @@ for iB=1:setNum
     timePose =  matPose(:,1)/1e+6;
     MDtimeGT = KDTreeSearcher(timeGT);
     [idx, D] = rangesearch(MDtimeGT,timePose,0.05);
-    ateError = zeros(lenPose,1);
+    ateErrorInit = zeros(lenPose,1);% < 1% mismatch
+    ateTUMinit = zeros(lenPose,1);
     not_found = 0;
 
+    idxC = 0;
     for i=1:lenPose
         if isempty(idx{i})
             not_found = not_found + 1;
             continue;    
         end
+        idxC = idxC + 1;
         %% rule out obvious wrong ground truth, please check for yourself
         if date=="2013-02-23" && matPose(i,2)>-310 && matPose(i,2)<-260&&...
             matPose(i,3)>-450 && matPose(i,3)<-435
             continue;
-        end        
-        %% convert gt body to gt imu
-        ateError(i) = norm(matPose(i,2:3)-matGT(idx{i}(1),2:3));
+        end
+        ateErrorInit(idxC) = norm(matPose(i,2:3)-matGT(idx{i}(1),2:3));
+        deltaT = transError(matGT(idx{i}(1),2:7),matPose(i,2:7));
+        ateTUMinit(idxC) = norm(deltaT(1:3,4));
     end
-    ateErrorCell{iB} = ateError;
-    percWithinOneMeter(iB) = 100 -length(find(ateError> 1.0))/length(ateError)*100;
-    percWithin05Meter(iB) = 100 -length(find(ateError> 0.5))/length(ateError)*100;
-    percWithin02Meter(iB) = 100 -length(find(ateError> 0.2))/length(ateError)*100;
-    percWithin01Meter(iB) = 100 -length(find(ateError> 0.1))/length(ateError)*100;
-    stdError(iB) = std(ateError);
-    meanError(iB) = mean(ateError);
-    maxError(iB)= max(ateError);
+    ateError = ateErrorInit(1:idxC);
+    ateTUM = ateTUMinit(1:idxC);
+%     disp("Not found: "+ num2str(not_found/lenPose)); % < 1%
+    duration(iB) = (timeGT(end)-timeGT(1))/3600; 
     [TMMno(iB), positions] = TMMcnt(isTMM);
     locFrequency(iB) = lenPose/(timeGT(end)-timeGT(1));
     locFrequencyG(iB) = length(timeLog)/(timeGT(end)-timeGT(1));
-    duration(iB) = (timeGT(end)-timeGT(1))/3600; 
-    successRate(iB) = length(find(ateError < 1.0))/10/(timeGT(end)-timeGT(1))*100;
+    %% TUM
+    RMSE(iB) = norm(ateTUM)/sqrt(idxC);
     
-
-%     figure(1)
-%     histogram(ateError,"DisplayStyle","stairs");
-%     hold on
+%     ateErrorCell{iB} = ateError;
+%     percWithinOneMeter(iB) = 100 -length(find(ateError> 1.0))/length(ateError)*100;
+%     percWithin05Meter(iB) = 100 -length(find(ateError> 0.5))/length(ateError)*100;
+%     percWithin02Meter(iB) = 100 -length(find(ateError> 0.2))/length(ateError)*100;
+%     percWithin01Meter(iB) = 100 -length(find(ateError> 0.1))/length(ateError)*100;
+%     stdError(iB) = std(ateError);
+%     meanError(iB) = mean(ateError);
+%     maxError(iB)= max(ateError);
+%     ateErrorCell{iB} = ateError;
+%     successRate(iB) = length(find(ateError < 1.0))/10/(timeGT(end)-timeGT(1))*100;
+    
+    ateErrorCell{iB} = ateTUM;
+    percWithinOneMeter(iB) = length(find(ateTUM < 1.0))/length(ateTUM)*100;
+    percWithin05Meter(iB) = length(find(ateTUM < 0.5))/length(ateTUM)*100;
+    percWithin02Meter(iB) = length(find(ateTUM < 0.2))/length(ateTUM)*100;
+    percWithin01Meter(iB) = length(find(ateTUM < 0.1))/length(ateTUM)*100;
+    stdError(iB) = std(ateTUM);
+    meanError(iB) = mean(ateTUM);
+    maxError(iB)= max(ateTUM);
+    successRate(iB) = length(find(ateTUM < 1.0))/10/(timeGT(end)-timeGT(1))*100;
+    
+    figure(1)
+    histogram(ateTUM,"DisplayStyle","stairs");
+    hold on
 %     
 %     figure(2)
 %     idxOver1m = find(ateError>1.0);
@@ -134,7 +159,7 @@ for iB=1:setNum
     figure(3)
     y = matPose(:,3);
     y(end) = nan;
-    patch(matPose(:,2),y,ateError,'EdgeColor','interp','MarkerFaceColor','flat');
+    patch(matPose(:,2),y,ateTUMinit,'EdgeColor','interp','MarkerFaceColor','flat');
     hold on
     
     for iT = 1:TMMno(iB)
@@ -143,27 +168,31 @@ for iB=1:setNum
     
 end
 colorbar;
-% legend(dateLists);
 hold off
-% xlabel("Localization error (m)");
-% ylabel("Count");
+
+figure(1)
+legend(dateLists);
+xlabel("Localization error (m)");
+ylabel("Count");
 
 figure(3)
 xlabel('X (m)');
 ylabel('Y (m)');
 %% PLOT and SAVE
-T = table(dateLists,daysPassed,duration,meanError,stdError,maxError,percWithin01Meter,percWithin02Meter,...
-    percWithin05Meter,percWithinOneMeter,successRate, locFrequency,locFrequencyG,TMMno,mapExtension);
-writetable(T,"loc_results_v3.xls");
+T = table(dateLists,daysPassed,duration,RMSE,meanError,maxError,percWithin01Meter,percWithin02Meter,...
+    percWithin05Meter,percWithinOneMeter,successRate, locFrequency,TMMno,mapExtension);
+writetable(T,"results/loc_results_v4.xls");
 
 %% overall mean and std
 ateAll = [];
 for i=1:setNum
-    ateAll = [ateAll; ateError];
+    ateAll = [ateAll; ateErrorCell{i}];
 end
-disp("mean error: "+ num2str(mean(ateAll)));
-disp("std error: " + num2str(std(ateAll)));
-length(find(ateAll<1))/length(ateAll);
+disp("RMSE error for all: "+ num2str(norm(ateAll)/sqrt(length(ateAll))));
+disp("MAX error for all: " + num2str(max(ateAll)));
+disp("0.1 m percent for all: " + num2str( length(find(ateAll<0.1))/length(ateAll)  ));
+disp("0.2 m percent for all: " + num2str( length(find(ateAll<0.2))/length(ateAll)  ));
+disp("0.5 m percent for all: " + num2str( length(find(ateAll<0.5))/length(ateAll)  ));
 
 %% error space distribution
 gtFilePath = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/"+startDate+"/groundtruth_"+startDate+".csv";
@@ -173,7 +202,6 @@ gtData = textscan(fID3, "%f%s%f%s%f%s%f%s%f%s%f%s%f");
 downsample = 10;
 lenGT = length(gtData{1});
 matGT = zeros(floor(lenGT/10),7);
-%% kloam+fastlio uses imu pose, so here convert body pose to imu pose
 tbi = [-0.11 -0.18 -0.71]';
 for i=1:floor(lenGT/10)
     for j=1:7
@@ -184,9 +212,8 @@ for i=1:floor(lenGT/10)
     tmi = Rmb*tbi +tmb;
     matGT(i,2:4) = tmi';
 end
-% figure(2)
-% plot(matGT(:,2),matGT(:,3));
-
+% figure(4)
+% histogram(ateAll);
 
 % a=[timePose-timePose(1) ateError];
 function strPattern =strPatternGenerate(n)
@@ -223,4 +250,15 @@ function nums = convertNum(x)
     for i=1:3
         nums(i) = strCell(i);
     end
+end
+
+function eT = transError(Vgt,V2)
+% input: x y z r p y
+    T1 = eye(4);
+    T2 = eye(4);
+    T1(1:3,1:3) = eul2rotm([Vgt(6),Vgt(5),Vgt(4)],"ZYX");
+    T2(1:3,1:3) = eul2rotm([V2(6),V2(5),V2(4)],"ZYX");
+    T1(1:3,4) = Vgt(1:3);
+    T2(1:3,4) = V2(1:3);
+    eT = inv(T1)*T2;    
 end

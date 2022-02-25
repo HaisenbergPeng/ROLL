@@ -180,7 +180,7 @@ public:
         nh.param<double>("kloam/alti0", alti0, 0.0);
 
         nh.param<float>("kloam/starttemporaryMappingDistThre", starttemporaryMappingDistThre, 20.0);
-        nh.param<float>("kloam/inlierThreshold", inlierThreshold, 0.2);
+        nh.param<float>("kloam/inlierThreshold", inlierThreshold, 0.1);
         nh.param<float>("kloam/startTemporaryMappingInlierRatioThre", startTemporaryMappingInlierRatioThre, 0.4);
         nh.param<float>("kloam/exitTemporaryMappingInlierRatioThre", exitTemporaryMappingInlierRatioThre, 0.4);
         nh.param<int>("kloam/slidingWindowSize", slidingWindowSize, 30);
