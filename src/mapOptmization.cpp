@@ -896,7 +896,7 @@ public:
 
         Eigen::Affine3f trans_gps_to_gpsM = pcl::getTransformation(x,y,z,0,0,0);
         Eigen::Affine3f trans_imu_to_map = affine_gps_to_body*trans_gps_to_gpsM*affine_gps_to_body.inverse()*affine_imu_to_body;
-        cout<<"after conversion x y z: "<<trans_imu_to_map(0,3)<<" "<<trans_imu_to_map(1,3)<<" "<<trans_imu_to_map(2,3)<<endl;
+        // cout<<"after conversion x y z: "<<trans_imu_to_map(0,3)<<" "<<trans_imu_to_map(1,3)<<" "<<trans_imu_to_map(2,3)<<endl;
         nav_msgs::Odometry odomGPS;
         // notice PoseWithCovariance order: # (x, y, z, rotation about X axis, rotation about Y axis, rotation about Z axis; float64[36] covariance
         // different from GTSAM pose covariance order

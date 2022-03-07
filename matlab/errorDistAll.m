@@ -7,7 +7,7 @@ dateLists = ["2012-02-02","2012-03-17","2012-04-29",...
     "2012-05-11","2012-06-15","2012-08-04","2012-11-17","2013-01-10","2013-02-23"]';
 folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2";
 
-% %% no TMM
+% %% no TM
 % dateLists = ["2012-02-02","2012-03-17","2012-04-29","2012-05-11"]';
 % folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noTMM";
 
@@ -37,7 +37,7 @@ successRate =  zeros(setNum,1);
 TMMno = zeros(setNum,1);
 duration = zeros(setNum,1);
 mapExtension = cell(setNum,1);
-
+timeAll = 0;
 for iB=1:setNum
     date = dateLists{iB};
     disp("reading "+date);
@@ -125,18 +125,7 @@ for iB=1:setNum
     locFrequencyG(iB) = length(timeLog)/(timeGT(end)-timeGT(1));
     %% TUM
     RMSE(iB) = norm(ateTUM)/sqrt(idxC);
-    
-%     ateErrorCell{iB} = ateError;
-%     percWithinOneMeter(iB) = 100 -length(find(ateError> 1.0))/length(ateError)*100;
-%     percWithin05Meter(iB) = 100 -length(find(ateError> 0.5))/length(ateError)*100;
-%     percWithin02Meter(iB) = 100 -length(find(ateError> 0.2))/length(ateError)*100;
-%     percWithin01Meter(iB) = 100 -length(find(ateError> 0.1))/length(ateError)*100;
-%     stdError(iB) = std(ateError);
-%     meanError(iB) = mean(ateError);
-%     maxError(iB)= max(ateError);
-%     ateErrorCell{iB} = ateError;
-%     successRate(iB) = length(find(ateError < 1.0))/10/(timeGT(end)-timeGT(1))*100;
-    
+
     ateErrorCell{iB} = ateTUM;
     percWithinOneMeter(iB) = length(find(ateTUM < 1.0))/length(ateTUM)*100;
     percWithin05Meter(iB) = length(find(ateTUM < 0.5))/length(ateTUM)*100;
@@ -146,7 +135,7 @@ for iB=1:setNum
     meanError(iB) = mean(ateTUM);
     maxError(iB)= max(ateTUM);
     successRate(iB) = length(find(ateTUM < 1.0))/10/(timeGT(end)-timeGT(1))*100;
-    
+    timeAll = timeAll + timeGT(end)-timeGT(1);
     figure(1)
     histogram(ateTUM,"DisplayStyle","stairs");
     hold on
@@ -188,12 +177,14 @@ ateAll = [];
 for i=1:setNum
     ateAll = [ateAll; ateErrorCell{i}];
 end
-disp("RMSE error for all: "+ num2str(norm(ateAll)/sqrt(length(ateAll))));
-disp("MAX error for all: " + num2str(max(ateAll)));
-disp("0.1 m percent for all: " + num2str( length(find(ateAll<0.1))/length(ateAll)  ));
-disp("0.2 m percent for all: " + num2str( length(find(ateAll<0.2))/length(ateAll)  ));
-disp("0.5 m percent for all: " + num2str( length(find(ateAll<0.5))/length(ateAll)  ));
-
+disp("--------------ROLL----------------");
+disp("RMSE error for all: "+ norm(ateAll)/sqrt(length(ateAll)));
+disp("MAX error for all: " + max(ateAll));
+disp("0.1 m percent for all: " + 100*length(find(ateAll<0.1))/length(ateAll) );
+disp("0.2 m percent for all: " + 100*length(find(ateAll<0.2))/length(ateAll));
+disp("0.5 m percent for all: " + 100*length(find(ateAll<0.5))/length(ateAll)  );
+disp("Loc rate: "+length(ateAll)/timeAll)
+% disp("Success ratio: "+length(find(ateError < 1.0))/(timeGT(end)-timeGT(1))/10)
 %% error space distribution
 gtFilePath = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/"+startDate+"/groundtruth_"+startDate+".csv";
 fID3 = fopen(gtFilePath);

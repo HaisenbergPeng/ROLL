@@ -1,6 +1,6 @@
 % clc
-clear;
-close all
+% clear;
+% close all
 %% Sometimes the code malfunctions and you will get wierd statistics;
 % don't know why so just reboot the MATLAB
 % folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noTMM";
@@ -73,7 +73,7 @@ timePose =  matPose(:,1)/1e+6;
 % MDtimeGT = KDTreeSearcher(timeGT);
 [idx, D] = rangesearch(timeGT,timePose,0.05);
 ateErrorINI = zeros(lenPose,1);
-yawError = zeros(lenPose,1);
+Err = zeros(lenPose,6);
 not_found = 0;
 idxC = 0;
 for i=1:lenPose
@@ -88,75 +88,68 @@ for i=1:lenPose
     end
     idxC = idxC + 1;
 %     ateError(i) = norm(matPose(i,2:3)-matGT(idx{i}(1),2:3));
-%     yawError(i) = 180/pi*(matPose(i,7)-matGT(idx{i}(1),7));
+    Err(i,:) = matPose(i,2:7)-matGT(idx{i}(1),2:7);
+    for iE = 1:3
+        Err(i,iE+3) = 180/pi*(Err(i,iE+3) - 2*pi*round(Err(i,iE+3)/2/pi));
+    end
     deltaT = transError(matGT(idx{i}(1),2:7),matPose(i,2:7));
     ateErrorINI(idxC) = norm(deltaT(1:3,4));
-%     if ateErrorINI(idxC) > 10
-%         i
-%         matPose(i,1)-matGT(idx{i}(1),1)
-%         timePose(i)-timeGT(idx{i}(1))
-%         matPose(i,2:7)
-%     end
-    %% 2pi
-%     Ntmp = round(yawError(i)/360);
-%     yawError(i) = yawError(i) - Ntmp*360;
-%     if ateError(i)>1
-%         matGT(idx{i}(1),2:3)
-%     end
+
 end
 ateError = ateErrorINI(1:idxC);
-idxOver1m= find(ateError > 1.0);
-%% PLOT
-figure(1)
-plot(timePose-timePose(1),ateErrorINI);
-xlabel("Time (sec)");
-hold on
-% map extension
-plot(timeLog,inlierRatio2);
-plot(timeLog,isTMM);
-legend("Absolute localization error","Mapping inlier ratio","isTMM");
-% %% scene change
-% ylabel("Absolute trajectory error (m)");
-% legend("w. TM","w.o. TM");
-% saveas(1,date + "_ate_error.jpg");
+
 disp("RMSE error: "+norm(ateError)/sqrt(idxC))
 disp("max error: "+max(ateError))
 disp("Loc rate: "+length(ateError)/(timePose(end)-timePose(1)))
-disp("Success ratio: "+length(find(ateError < 2.0))/(timeGT(end)-timeGT(1))/10)
-disp("<0.1 %: "+ length(find(ateError < 0.1))/lenPose)
-disp("<0.2 %: "+ length(find(ateError < 0.2))/lenPose)
-disp("<0.5 %: "+ length(find(ateError < 0.5))/lenPose)
-disp("<1.0 %: "+ length(find(ateError < 1.0))/lenPose)
+disp("Success ratio: "+100*length(find(ateError < 1.0))/(timeGT(end)-timeGT(1))/10)
+disp("<0.1 %: "+ 100*length(find(ateError < 0.1))/idxC)
+disp("<0.2 %: "+ 100*length(find(ateError < 0.2))/idxC)
+disp("<0.5 %: "+ 100*length(find(ateError < 0.5))/idxC)
+disp("<1.0 %: "+ 100*length(find(ateError < 1.0))/idxC)
+
+figure(1)
+hold on
+plot(matPose(:,2),matPose(:,3));
+plot(matGT(:,2),matGT(:,3));
+legend("LOAM(M)+TM","LOAM(M)","ROLL","G.T.");
+xlabel("X (m)");
+ylabel("Y (m)");
 
 figure(2)
-% plot(matPose(:,2),matPose(:,3),".");
-plot(matPose(:,2),matPose(:,3));
-hold on
-plot(matGT(:,2),matGT(:,3));
-plot(matPose(idxOver1m,2),matPose(idxOver1m,3),".","MarkerSize",4);
+subplot(3,2,1)
+plot(timePose-timePose(1),Err(:,1),'r');
+xlabel("Time (s)");
+ylabel("Error in x (m)");
+subplot(3,2,3)
+plot(timePose-timePose(1),Err(:,2),'r');
+xlabel("Time (s)");
+ylabel("Error in y (m)");
+subplot(3,2,5)
+plot(timePose-timePose(1),Err(:,3),'r');
+xlabel("Time (s)");
+ylabel("Error in z (m)");
+
+subplot(3,2,2)
+plot(timePose-timePose(1),Err(:,4),'r');
+xlabel("Time (s)");
+ylabel("Error in roll (^{\circ})");
+subplot(3,2,4)
+plot(timePose-timePose(1),Err(:,5),'r');
+xlabel("Time (s)");
+ylabel("Error in pitch (^{\circ})");
+subplot(3,2,6)
+plot(timePose-timePose(1),Err(:,6),'r');
+xlabel("Time (s)");
+ylabel("Error in yaw (^{\circ})");
+legend("LOAM(M)","LOAM(M)+TM","ROLL");
+
 
 % figure(3)
-% plot(timeLog,logData{7}-logData{7}(1));
 % hold on
-% plot(timeLog,logData{8}-logData{8}(1));
-% plot(timePose-timePose(1),matPose(:,2))
-% plot(timeLog,logData{9});
-% plot(timeLog,logData{10});
-% legend("x","y","xF","yF");
-
-% figure(4)
-% histogram(ateError);
-% hold on
-% 
-% figure(5)
-% histogram(inlierRatio2)
-% a=[timePose-timePose(1) ateError];
-
-% figure(5)
-% h = histogram(inlierRatio2, 'Normalization','probability');
-% xlabel("Matching inlier ratio");
-% ylabel("Probability");
-
+% histogram(ateError)
+% legend("LOAM(M)","LOAM(M)+TM","ROLL");
+% xlabel("Translational distance error");
+% ylabel("Count");
 function eT = transError(Vgt,V2)
 % input: x y z r p y
     T1 = eye(4);
@@ -166,4 +159,10 @@ function eT = transError(Vgt,V2)
     T1(1:3,4) = Vgt(1:3)';
     T2(1:3,4) = V2(1:3)';
     eT = T1\T2;    % equals to T1\T2
+end
+
+function y = removeJump(x)
+    % 2pi
+    Ntmp = round(x/360);
+    y = x - Ntmp*360;
 end

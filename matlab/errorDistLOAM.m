@@ -1,31 +1,18 @@
-% clc;
+clc;
 clear;
 close all
 % folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noTMM";
 % folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2";
-folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/no_LIO";
-% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/LOAM";
+folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/LOAM_TM";
+folderL = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/LOAM";
 
 date = "2012-05-11";
 logFilePath = folder+"/"+date+"/map_pcd/mappingError.txt";
-poseFilePath = folder+"/"+date+"_bin/map_pcd/path_mapping.txt";
-% poseFilePath = folder+"/"+date+"/map_pcd/path_vinsfusion.txt";
-% poseFilePath = folder+"/"+date+"_bin/map_pcd/path_fusion.txt";
+% poseFilePath = folder+"/"+date+"_bin/map_pcd/path_mapping.txt";
+% poseFilePathL = folderL+"/"+date+"_bin/map_pcd/path_mapping.txt";
+poseFilePath = folder+"/"+date+"_bin/map_pcd/path_fusion.txt";
+poseFilePathL = folderL+"/"+date+"_bin/map_pcd/path_fusion.txt";
 gtFilePath = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/"+date+"/groundtruth_"+date+".csv";
-
-%% log file reading
-fID = fopen(logFilePath);
-strPattern = "";
-n = 11;
-for i=1:n
-    strPattern = strPattern+"%f";
-end
-logData = textscan(fID,strPattern);
-timeLog = logData{1}-logData{1}(1);
-regiError = logData{3};
-inlierRatio2 = logData{3};
-inlierRatio = logData{2};
-% isTMM = logData{2};
 
 %% pose file reading
 fID2 = fopen(poseFilePath);
@@ -42,6 +29,24 @@ for i=1:lenPose
         matPose(i,j) = poseData{j}(i);
     end
 end
+timePose =  matPose(:,1)/1e+6;
+
+%% pose file reading 2
+fID2 = fopen(poseFilePathL);
+strPattern = "";
+n = 7;
+for i=1:n
+    strPattern = strPattern+"%f";
+end
+poseData = textscan(fID2,strPattern);
+lenPoseL = length(poseData{1});
+matPoseL = zeros(lenPoseL,7);
+for i=1:lenPoseL
+    for j=1:7
+        matPoseL(i,j) = poseData{j}(i);
+    end
+end
+timePoseL =  matPoseL(:,1)/1e+6;
 
 %% gt reading
 % readcsv readmatrix:sth is wrong
@@ -57,92 +62,112 @@ for i=1:floor(lenGT/10)
     for j=1:7
         matGT(i,j) = gtData{2*j-1}(10*i);
     end
-%     matGT(i,2:7) = body2lidar(matGT(i,2:7)); % why no need?
+    matGT(i,2:7) = body2lidar(matGT(i,2:7)); % why no need?
 end
 
-%% sync with time
+
 timeGT = matGT(:,1)/1e+6; % us -> sec
-timePose =  matPose(:,1)/1e+6;
 MDtimeGT = KDTreeSearcher(timeGT);
 [idx, D] = rangesearch(MDtimeGT,timePose,0.05);
-ateErrorINI = zeros(lenPose,1);
-yawError = zeros(lenPose,1);
 not_found = 0;
 idxC = 0;
+%% sync with time 
+ateErrorINI = zeros(lenPose,1);
+Err = zeros(lenPose,6);
 for i=1:lenPose
     if isempty(idx{i})
         not_found = not_found + 1;
         continue;    
     end
-        %% rule out obvious wrong ground truth
-    if date=="2013-02-23" && matPose(i,2)>-310 && matPose(i,2)<-260&&...
-        matPose(i,3)>-450 && matPose(i,3)<-435
-        continue;
-    end
     idxC = idxC + 1;
-%     ateError(i) = norm(matPose(i,2:3)-matGT(idx{i}(1),2:3));
-%     yawError(i) = 180/pi*(matPose(i,7)-matGT(idx{i}(1),7));
+    Err(i,:) = matPose(i,2:7)-matGT(idx{i}(1),2:7);
+    for iE = 1:3
+        Err(i,iE+3) = 180/pi*(Err(i,iE+3) - 2*pi*round(Err(i,iE+3)/2/pi));
+    end
     deltaT = transError(matGT(idx{i}(1),2:7),matPose(i,2:7));
-    ateErrorINI(idxC) = norm(deltaT(1:3,4));
-    %% 2pi
-    Ntmp = round(yawError(i)/360);
-    yawError(i) = yawError(i) - Ntmp*360;
-%     if ateError(i)>1
-%         matGT(idx{i}(1),2:3)
-%     end
+    ateErrorINI(idxC) = norm(deltaT(1:3,4));  
 end
 ateError = ateErrorINI(1:idxC);
-idxOver1m= find(ateError > 1.0);
-%% PLOT
-figure(1)
-plot(timePose-timePose(1),ateErrorINI);
-xlabel("Time (sec)");
-hold on
-% map extension
-plot(timeLog,inlierRatio2);
-% plot(timeLog,isTMM);
-legend("Absolute localization error","Mapping inlier ratio","isTMM");
-% %% scene change
-% ylabel("Absolute trajectory error (m)");
-% legend("w. TM","w.o. TM");
-% saveas(1,date + "_ate_error.jpg");
-disp("RMSE error: "+norm(ateError)/sqrt(idxC))
+%% sync with time 2
+[idxL, D] = rangesearch(MDtimeGT,timePoseL,0.05);
+ateErrorINIL = zeros(lenPoseL,1);
+ErrL = zeros(lenPoseL,6);
+idxC = 0;
+for i=1:lenPoseL
+    if isempty(idxL{i})
+        not_found = not_found + 1;
+        continue;    
+    end 
+    idxC = idxC + 1;
+    ErrL(i,:) = matPoseL(i,2:7)-matGT(idxL{i}(1),2:7);
+    for iE = 1:3
+        ErrL(i,iE+3) = 180/pi*(ErrL(i,iE+3) - 2*pi*round(ErrL(i,iE+3)/2/pi));
+    end
+    deltaT = transError(matGT(idxL{i}(1),2:7),matPose(i,2:7));
+    ateErrorINIL(idxC) = norm(deltaT(1:3,4));  
+end
+ateErrorL = ateErrorINIL(1:idxC);
+disp("----------------LOAM----------------")
+disp("RMSE error: "+norm(ateErrorL)/sqrt(length(ateErrorL)))
+disp("max error: "+max(ateErrorL))
+disp("Loc rate: "+length(ateErrorL)/(timePoseL(end)-timePoseL(1)))
+disp("Success ratio %: "+100*length(find(ateErrorL < 1.0))/(timeGT(end)-timeGT(1))/10)
+disp("<0.1 %: "+ 100*length(find(ateErrorL < 0.1))/length(ateErrorL))
+disp("<0.2 %: "+ 100*length(find(ateErrorL < 0.2))/length(ateErrorL))
+disp("<0.5 %: "+ 100*length(find(ateErrorL < 0.5))/length(ateErrorL))
+disp("<1.0 %: "+ 100*length(find(ateErrorL < 1.0))/length(ateErrorL))
+disp("----------------LOAM+TM----------------")
+disp("RMSE error: "+norm(ateError)/sqrt(length(ateError)))
 disp("max error: "+max(ateError))
 disp("Loc rate: "+length(ateError)/(timePose(end)-timePose(1)))
-disp("Success ratio: "+length(find(ateError < 1.0))/(timeGT(end)-timeGT(1))/10)
-disp("<0.1 %: "+ length(find(ateError < 0.1))/lenPose)
-disp("<0.2 %: "+ length(find(ateError < 0.2))/lenPose)
-disp("<0.5 %: "+ length(find(ateError < 0.5))/lenPose)
-disp("<1.0 %: "+ length(find(ateError < 1.0))/lenPose)
+disp("Success ratio %: "+100*length(find(ateError < 1.0))/(timeGT(end)-timeGT(1))/10)
+disp("<0.1 %: "+ 100*length(find(ateError < 0.1))/length(ateError))
+disp("<0.2 %: "+ 100*length(find(ateError < 0.2))/length(ateError))
+disp("<0.5 %: "+ 100*length(find(ateError < 0.5))/length(ateError))
+disp("<1.0 %: "+ 100*length(find(ateError < 1.0))/length(ateError))
+
+
+figure(1)
+plot(matPoseL(:,2),matPoseL(:,3),'b');
+hold on
+plot(matPose(:,2),matPose(:,3),'Color',[0.9290 0.6940 0.1250]);
 
 figure(2)
-% plot(matPose(:,2),matPose(:,3),".");
-plot(matPose(:,2),matPose(:,3));
+subplot(3,2,1)
+plot(timePoseL-timePoseL(1),ErrL(:,1),'b');
 hold on
-plot(matGT(:,2),matGT(:,3));
-% plot(matPose(idxOver1m,2),matPose(idxOver1m,3),".","MarkerSize",4);
+plot(timePose-timePose(1),Err(:,1),'Color',[0.9290 0.6940 0.1250]);
+
+subplot(3,2,3)
+plot(timePoseL-timePoseL(1),ErrL(:,2),'b');
+hold on
+plot(timePose-timePose(1),Err(:,2),'Color',[0.9290 0.6940 0.1250]);
+
+subplot(3,2,5)
+plot(timePoseL-timePoseL(1),ErrL(:,3),'b');
+hold on
+plot(timePose-timePose(1),Err(:,3),'Color',[0.9290 0.6940 0.1250]);
+
+subplot(3,2,2)
+plot(timePoseL-timePoseL(1),ErrL(:,4),'b');
+hold on
+plot(timePose-timePose(1),Err(:,4),'Color',[0.9290 0.6940 0.1250]);
+
+subplot(3,2,4)
+plot(timePoseL-timePoseL(1),ErrL(:,5),'b');
+hold on
+plot(timePose-timePose(1),Err(:,5),'Color',[0.9290 0.6940 0.1250]);
+
+subplot(3,2,6)
+plot(timePoseL-timePoseL(1),ErrL(:,6),'b');
+hold on
+plot(timePose-timePose(1),Err(:,6),'Color',[0.9290 0.6940 0.1250]);
 
 % figure(3)
-% plot(timeLog,logData{7}-logData{7}(1));
+% histogram(ateErrorL)
 % hold on
-% plot(timeLog,logData{8}-logData{8}(1));
-% plot(timePose-timePose(1),matPose(:,2))
-% plot(timeLog,logData{9});
-% plot(timeLog,logData{10});
-% legend("x","y","xF","yF");
+% histogram(ateError)
 
-% figure(4)
-% histogram(ateError);
-% hold on
-% 
-% figure(5)
-% histogram(inlierRatio2)
-% a=[timePose-timePose(1) ateError];
-
-% figure(5)
-% h = histogram(inlierRatio2, 'Normalization','probability');
-% xlabel("Matching inlier ratio");
-% ylabel("Probability");
 
 function eT = transError(Vgt,V2)
 % input: x y z r p y
@@ -170,4 +195,9 @@ function Vlidar = body2lidar(Vbody)
     Vlidar(1:3) = Tml(1:3,4)';
     tmp = rotm2eul(Tml(1:3,1:3),"ZYX");
     Vlidar(4:6) = [tmp(3),tmp(2),tmp(1)];
+end
+
+function y = removeJump(x)
+    N = round(x/pi/2);
+    y = x-N*pi*2;
 end
