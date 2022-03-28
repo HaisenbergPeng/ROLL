@@ -183,6 +183,7 @@ disp("MAX error for all: " + max(ateAll));
 disp("0.1 m percent for all: " + 100*length(find(ateAll<0.1))/length(ateAll) );
 disp("0.2 m percent for all: " + 100*length(find(ateAll<0.2))/length(ateAll));
 disp("0.5 m percent for all: " + 100*length(find(ateAll<0.5))/length(ateAll)  );
+disp("1.0 m percent for all: " + 100*length(find(ateAll<1.0))/length(ateAll)  );
 disp("Loc rate: "+length(ateAll)/timeAll)
 % disp("Success ratio: "+length(find(ateError < 1.0))/(timeGT(end)-timeGT(1))/10)
 %% error space distribution

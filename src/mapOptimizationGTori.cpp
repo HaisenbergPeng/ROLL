@@ -1,6 +1,3 @@
-// This script serves for two purposes:
-//1. generate error cloud for visualization;
-//2. generate error tabulet with features(PCA eigenvalues, FPFH or ISHOT) calculated
 #include "utility.h"
 #include "kloam/cloud_info.h"
 #include "kloam/save_map.h"
@@ -26,7 +23,12 @@ using symbol_shorthand::X; // Pose3 (x,y,z,r,p,y)
 using symbol_shorthand::V; // Vel   (xdot,ydot,zdot)
 using symbol_shorthand::B; // Bias  (ax,ay,az,gx,gy,gz)
 using symbol_shorthand::G; // GPS pose
-
+// giseop
+enum class SCInputType { 
+    SINGLE_SCAN_FULL, 
+    SINGLE_SCAN_FEAT, 
+    MULTI_SCAN_FEAT 
+}; 
 /*
     * A point cloud type that has 6D pose info ([x,y,z,roll,pitch,yaw] intensity is time stamp)
     */
@@ -55,16 +57,12 @@ class mapOptimization : public ParamServer
 {
 
 public:
-// only save when saving keyframes
-    pcl::PointCloud<PointType>::Ptr errCloudAll;
-    pcl::PointCloud<PointType>::Ptr errCloud;
-    Eigen::Affine3f affine_imu;
     bool mapLoaded = false;
 
     vector<int> isIndoorKeyframe;
     vector<int> isIndoorKeyframeTMM;
 
-    Eigen::Affine3f trans_lidar_to_imu;
+ Eigen::Affine3f trans_lidar_to_imu;
     Eigen::Affine3f trans_imu_to_body ;
     Eigen::Affine3f trans_lidar_to_body;
         
@@ -103,8 +101,6 @@ public:
     ISAM2 *isam;
     Values isamCurrentEstimate;
     Eigen::MatrixXd poseCovariance;
-
-    ros::Publisher pubErrCloud;
 
     ros::Publisher pubLidarCloudSurround;
     ros::Publisher pubLidarOdometryGlobal;
@@ -176,7 +172,7 @@ public:
 
     pcl::VoxelGrid<PointType> downSizeFilterCorner;
     pcl::VoxelGrid<PointType> downSizeFilterSurf;
-    pcl::VoxelGrid<PointType> downSizeFilter;
+    pcl::VoxelGrid<PointType> downSizeFilterICP;
     pcl::VoxelGrid<PointType> downSizeFilterSurroundingKeyPoses; // for surrounding key poses of scan-to-map optimization
     pcl::VoxelGrid<PointType> downSizeFilterSavingKeyframes;
     
@@ -241,9 +237,6 @@ public:
         parameters.relinearizeThreshold = 0.1;
         parameters.relinearizeSkip = 1;
         isam = new ISAM2(parameters);
-
-        pubErrCloud                 = nh.advertise<sensor_msgs::PointCloud2>("/kloam/mapping/errorCloud", 1);
-
         pubKeyPoses                 = nh.advertise<sensor_msgs::PointCloud2>("/kloam/mapping/key_poses", 1);
         pubLidarCloudSurround       = nh.advertise<sensor_msgs::PointCloud2>("/kloam/mapping/map_global", 1);
         pubLidarOdometryGlobal      = nh.advertise<nav_msgs::Odometry> ("/kloam/mapping/odometry", 1);
@@ -264,12 +257,12 @@ public:
         subGT = nh.subscribe<nav_msgs::Odometry> ("/ground_truth", 10, &mapOptimization::gtHandler,this);
 
         srvSaveMap  = nh.advertiseService("/kloam/save_map", &mapOptimization::saveMapService, this);
+
     
         downSizeFilterCorner.setLeafSize(mappingCornerLeafSize, mappingCornerLeafSize, mappingCornerLeafSize);
         downSizeFilterSurf.setLeafSize(mappingSurfLeafSize, mappingSurfLeafSize, mappingSurfLeafSize);
-        downSizeFilter.setLeafSize(mappingSurfLeafSize, mappingSurfLeafSize, mappingSurfLeafSize);
+        downSizeFilterICP.setLeafSize(mappingSurfLeafSize, mappingSurfLeafSize, mappingSurfLeafSize);
         downSizeFilterSurroundingKeyPoses.setLeafSize(surroundingKeyframeDensity, surroundingKeyframeDensity, surroundingKeyframeDensity); // for surrounding key poses of scan-to-map optimization
-        
         allocateMemory();
 
         if (localizationMode)
@@ -322,7 +315,6 @@ public:
                 mapLoaded=true;
             }
         }
-
         
     }
 
@@ -332,8 +324,6 @@ public:
 
         submap.reset(new pcl::PointCloud<PointType>()); // why dot when it is pointer type
 
-        errCloudAll.reset(new pcl::PointCloud<PointType>());
-        errCloud.reset(new pcl::PointCloud<PointType>());
 
         cloudKeyPoses3D.reset(new pcl::PointCloud<PointType>());
         cloudKeyPoses6D.reset(new pcl::PointCloud<PointTypePose>());
@@ -474,7 +464,7 @@ public:
                 // affine_lidar = affine_body*trans_lidar_to_body;              
                 // Affine3f2Trans(affine_lidar,transformTobeMapped);
                 
-
+                Eigen::Affine3f affine_imu;
                 odometryMsgToAffine3f(gtMsg, affine_body); 
                 affine_imu = affine_body*trans_imu_to_body;              
                 Affine3f2Trans(affine_imu,transformTobeMapped);
@@ -509,13 +499,6 @@ public:
                 }
                 mtx.unlock();
                 downsampleCurrentScan();
-
-                if(localizationMode)
-                {
-                    extractNearby();
-                    generateErrCloud();
-                }
-
                 saveKeyFramesAndFactor();
 
                 publishFrames();
@@ -528,157 +511,6 @@ public:
 
 
         }
-
-    }
-
-
-    void extractNearby()
-    {
-        if (cloudKeyPoses3D->empty() == true) 
-            return; 
-        pcl::PointCloud<PointType>::Ptr surroundingKeyPoses(new pcl::PointCloud<PointType>());
-        pcl::PointCloud<PointType>::Ptr surroundingKeyPosesDS(new pcl::PointCloud<PointType>());
-        std::vector<int> pointSearchInd;
-        std::vector<float> pointSearchSqDis;
-
-        // extract all the nearby key poses and downsample them
-        kdtreeSurroundingKeyPoses->setInputCloud(cloudKeyPoses3D); // create kd-tree
-        PointType pt;
-        pt.x=transformTobeMapped[3];
-        pt.y=transformTobeMapped[4];
-        pt.z=transformTobeMapped[5];
-        
-        kdtreeSurroundingKeyPoses->radiusSearch(pt, (double)surroundingKeyframeSearchRadius, pointSearchInd, pointSearchSqDis);
-
-        if (pointSearchInd.empty()) 
-        {
-            // cout<<pt.x<< " "<<pt.y <<endl;
-            // ROS_WARN("No nearby keyposes within %f meters",surroundingKeyframeSearchRadius);
-            return;
-        }
-
-        for (int i = 0; i < (int)pointSearchInd.size(); ++i)
-        {
-            int id = pointSearchInd[i];
-            surroundingKeyPoses->push_back(cloudKeyPoses3D->points[id]);
-        }
-
-        // downsampling is important especially at places where trajectories overlap when doing slam
-        
-        downSizeFilterSurroundingKeyPoses.setInputCloud(surroundingKeyPoses);
-        downSizeFilterSurroundingKeyPoses.filter(*surroundingKeyPosesDS);
-
-        for(auto& pt : surroundingKeyPosesDS->points) // recover the intensity field averaged by voxel filter
-        {
-            kdtreeSurroundingKeyPoses->nearestKSearch(pt, 1, pointSearchInd, pointSearchSqDis);
-            pt.intensity = cloudKeyPoses3D->points[pointSearchInd[0]].intensity;
-        }
-
-        if (!localizationMode)
-        {
-            // also extract some latest key frames in case the robot rotates in one position
-            // more recent ones matches better with current frames
-            int numPoses = cloudKeyPoses3D->size();
-            for (int i = numPoses-1; i >= 0; --i)
-            {
-                if (cloudInfoTime - cloudKeyPoses6D->points[i].time < 10.0)
-                    surroundingKeyPosesDS->push_back(cloudKeyPoses3D->points[i]);
-                else
-                    break;
-            }
-        }
-        extractCloud(surroundingKeyPosesDS);
-    }
-
-    void extractCloud(pcl::PointCloud<PointType>::Ptr cloudToExtract)
-    {
-        // fuse the map
-        lidarCloudCornerFromMap->clear();
-        lidarCloudSurfFromMap->clear(); 
-        // TicToc transPC;
-        for (int i = 0; i < (int)cloudToExtract->size(); ++i)
-        {
-            int thisKeyInd = (int)cloudToExtract->points[i].intensity;
-
-            *lidarCloudCornerFromMap += *transformPointCloud(cornerCloudKeyFrames[thisKeyInd],  &cloudKeyPoses6D->points[thisKeyInd]);
-            *lidarCloudSurfFromMap   += *transformPointCloud(surfCloudKeyFrames[thisKeyInd],    &cloudKeyPoses6D->points[thisKeyInd]);    
-        }
-        
-        // Downsample the surrounding corner key frames (or map)
-        downSizeFilterCorner.setInputCloud(lidarCloudCornerFromMap);
-        downSizeFilterCorner.filter(*lidarCloudCornerFromMapDS);
-        lidarCloudCornerFromMapDSNum = lidarCloudCornerFromMapDS->size();
-        // Downsample the surrounding surf key frames (or map)
-        downSizeFilterSurf.setInputCloud(lidarCloudSurfFromMap);
-        downSizeFilterSurf.filter(*lidarCloudSurfFromMapDS);
-        lidarCloudSurfFromMapDSNum = lidarCloudSurfFromMapDS->size();
-        
-    }
-
-
-    void pointAssociateToMap(PointType const * const pi, PointType * const po)
-    {
-        po->x = affine_imu(0,0) * pi->x + affine_imu(0,1) * pi->y + affine_imu(0,2) * pi->z + affine_imu(0,3);
-        po->y = affine_imu(1,0) * pi->x + affine_imu(1,1) * pi->y + affine_imu(1,2) * pi->z + affine_imu(1,3);
-        po->z = affine_imu(2,0) * pi->x + affine_imu(2,1) * pi->y + affine_imu(2,2) * pi->z + affine_imu(2,3);
-        po->intensity = pi->intensity;
-    }
-
-    void generateErrCloud()
-    {
-        float maxTolDis = 1.0 ;
-
-        kdtreeCornerFromMap.reset(new pcl::KdTreeFLANN<PointType>());
-        kdtreeSurfFromMap.reset(new pcl::KdTreeFLANN<PointType>());
-        kdtreeCornerFromMap->setInputCloud(lidarCloudCornerFromMapDS);
-        kdtreeSurfFromMap->setInputCloud(lidarCloudSurfFromMapDS);
-
-        errCloud.reset(new pcl::PointCloud<PointType>());
-
-        for(int i = 0; i < lidarCloudCornerLastDSNum; ++i)
-        {
-            PointType pointOri = lidarCloudCornerLastDS->points[i];
-            PointType pointProj;
-            std::vector<int> pointSearchInd;
-            std::vector<float> pointSearchSqDis;
-         
-            pointAssociateToMap(&pointOri, &pointProj);
-            kdtreeCornerFromMap->nearestKSearch(pointProj, 1, pointSearchInd, pointSearchSqDis);
-
-            // paint the point with intensity normalized with 255 (maxTolDis)
-            
-            if (pointSearchSqDis[0] < maxTolDis)
-            {
-                PointType errPoint = lidarCloudCornerFromMapDS->points[pointSearchInd[0]];
-                errPoint.intensity = pointSearchSqDis[0]*255/maxTolDis;
-                errCloud->push_back(errPoint);
-            }   
-        }
-
-        for(int i = 0; i < lidarCloudSurfLastDSNum; ++i)
-        {
-            PointType pointOri = lidarCloudSurfLastDS->points[i];
-            PointType pointProj;
-            std::vector<int> pointSearchInd;
-            std::vector<float> pointSearchSqDis;
-         
-            pointAssociateToMap(&pointOri, &pointProj);
-            kdtreeSurfFromMap->nearestKSearch(pointProj, 1, pointSearchInd, pointSearchSqDis);
-
-            // paint the point with intensity normalized with 255 (maxTolDis)
-            
-            if (pointSearchSqDis[0] < maxTolDis)
-            {
-                PointType errPoint = lidarCloudSurfFromMapDS->points[pointSearchInd[0]];
-                errPoint.intensity = pointSearchSqDis[0]*255/maxTolDis;
-                errCloud->push_back(errPoint);
-            }   
-        }
-
-
-
-        publishCloud(&pubErrCloud, errCloud,timeLidarInfoStamp, mapFrame);
-
 
     }
 
@@ -753,7 +585,6 @@ public:
     
     bool saveMapService(kloam::save_mapRequest& req, kloam::save_mapResponse& res)
     {        
-
         float resMap,resPoseIndoor,resPoseOutdoor;
 
         if(req.resolutionMap != 0)            resMap = req.resolutionMap;
@@ -765,18 +596,6 @@ public:
         if(req.resPoseOutdoor != 0)            resPoseOutdoor = req.resPoseOutdoor;
         else         resPoseOutdoor = 5.0;
 
-
-        if(localizationMode)
-        {
-            // downsample and save error cloud
-            pcl::PointCloud<PointType>::Ptr errCloudAllDS(new pcl::PointCloud<PointType>);
-            downSizeFilter.setInputCloud(errCloudAll);
-            downSizeFilter.setLeafSize(resMap, resMap, resMap);
-            downSizeFilter.filter(*errCloudAllDS);
-            pcl::io::savePCDFileBinary(saveMapDirectory + "/errorMap.pcd", *errCloudAllDS);
-        }
-
-
         // float mappingTime = accumulate(mappingTimeVec.begin(),mappingTimeVec.end(),0.0);
         // cout<<"Average time consumed by mapping is :"<<mappingTime/mappingTimeVec.size()<<" ms"<<endl;
         // if (localizationMode) cout<<"Times of entering TMM is :"<<TMMcount<<endl;
@@ -787,47 +606,7 @@ public:
         {
             // ofstream pose_file;
             cout<<"Recording trajectory..."<<endl;
-            // string fileName = saveMapDirectory+"/pose_fusion_kitti.txt";
-            // pose_file.open(fileName,ios::out);
-            // pose_file.setf(std::ios::scientific, std::ios::floatfield);
-            // pose_file.precision(6);
-            // if(!pose_file.is_open())
-            // {
-            //     cout<<"Cannot open "<<fileName<<endl;
-            //     return false;
-            // }
-            // // keyposes: kitti form (z forward x right y downward)
-            // cout<<"Number of poses: "<<pose_kitti_vec.size()<<endl;
-            // for (int i = 0; i <(int)pose_kitti_vec.size(); ++i)
-            // {
-            //     Eigen::Affine3f pose_kitti = pose_kitti_vec[i];
-            //     pose_file<<pose_kitti(0,0)<<" "<<pose_kitti(0,1)<<" "<<pose_kitti(0,2)<<" "<<pose_kitti(0,3)<<" "
-            //         <<pose_kitti(1,0)<<" "<<pose_kitti(1,1)<<" "<<pose_kitti(1,2)<<" "<<pose_kitti(1,3)<<" "
-            //         <<pose_kitti(2,0)<<" "<<pose_kitti(2,1)<<" "<<pose_kitti(2,2)<<" "<<pose_kitti(2,3)<<"\n";
 
-            // }
-            // pose_file.close();
-
-
-            // // 2nd: keyposes
-            // int pointN = (int)globalPath.poses.size();
-            // cout<< "There are "<<pointN<<" keyframes in total"<<endl;
-            // for (int i = 0; i < pointN; ++i)
-            // {
-            //     geometry_msgs::PoseStamped tmp = globalPath.poses[i];
-            //     pose_file<<tmp.pose.position.x<<" "<<tmp.pose.position.y<<" "<<tmp.pose.position.z<<"\n";
-            // }
-            // // 3rd: odometry msgs
-            // int pointN = (int)globalOdometry.size();
-            // cout<< "There are "<<pointN<<" in total"<<endl;
-            // for (int i = 0; i < pointN; ++i)
-            // {
-            //     nav_msgs::Odometry tmp = globalOdometry[i];
-            //     pose_file<<tmp.pose.pose.position.x<<" "<<tmp.pose.pose.position.y<<"\n";
-            // }
-            // pose_file.close();
-
-            // 4th: stamped pose for odometry gt
             mtx.lock();
             ofstream pose_file2;
             string fileName2 = saveMapDirectory+"/path_mapping.txt";
@@ -871,22 +650,6 @@ public:
             cout<<"Trajectory recording finished!"<<endl;
             mtx.unlock();
 
-            // if (gpsVec.empty() == false){
-            //     ofstream gps_file;
-            //     gps_file.open(saveMapDirectory+"/gps.txt",ios::out);
-            //     if(!gps_file.is_open())
-            //     {
-            //         cout<<"Cannot open"<<saveMapDirectory+"/gps.txt"<<endl;
-            //     }
-            //     for (int i = 0; i <int(gpsVec.size()); ++i)
-            //     {
-            //         nav_msgs::Odometry tmp = gpsVec[i];
-            //         gps_file<<tmp.pose.pose.position.x<<" "<<tmp.pose.pose.position.y<<" "<<tmp.pose.pose.position.z<<
-            //          " "<<tmp.pose.covariance[0]<<" "<<tmp.pose.covariance[7]<<" "<<tmp.pose.covariance[14]<<"\n";
-            //     }
-            //     gps_file.close();
-            //     cout<< "GPS data size: "<<gpsVec.size()<<endl;
-            // }
         }
 
 
@@ -1040,11 +803,6 @@ public:
 
     }
 
-    // void generateOGthread()
-    // {
-
-    // }
-
     void visualizeGlobalMapThread()
     {
         ros::Rate rate(0.2);
@@ -1185,12 +943,6 @@ public:
         int indoorJudgement = saveFrame();
         if ( indoorJudgement < 0)
             return;
-
-        if (localizationMode)
-        {
-            *errCloudAll += *errCloud;
-        }
-
 
         isIndoorKeyframe.push_back(indoorJudgement);
 

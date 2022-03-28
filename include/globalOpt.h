@@ -10,6 +10,7 @@
  *******************************************************/
 
 #pragma once
+
 #include <vector>
 #include <map>
 #include <iostream>
@@ -20,10 +21,8 @@
 #include <ceres/ceres.h>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
-#include<cmath>
-// #include "LocalCartesian.hpp"
-#include "tic_toc.h"
 
+#include "tic_toc.h"
 using namespace std;
 
 class GlobalOptimization

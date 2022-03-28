@@ -162,7 +162,6 @@ def read_first_vel_packet(f_vel, bag):
 
     f_vel.read(4) # padding
     for i in range(num_hits):
-
         x = struct.unpack('<H', f_vel.read(2))[0]
         y = struct.unpack('<H', f_vel.read(2))[0]
         z = struct.unpack('<H', f_vel.read(2))[0]

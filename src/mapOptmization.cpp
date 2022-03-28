@@ -2,6 +2,10 @@
 #include "kloam/cloud_info.h"
 #include "kloam/save_map.h"
 
+#include"LOAMmapping.h"
+#include "globalOpt.h"
+
+
 #include <gtsam/geometry/Rot3.h>
 #include <gtsam/geometry/Pose3.h>
 #include <gtsam/slam/PriorFactor.h>
@@ -14,12 +18,7 @@
 #include <gtsam/nonlinear/Marginals.h>
 #include <gtsam/nonlinear/Values.h>
 #include <gtsam/inference/Symbol.h>
-
 #include <gtsam/nonlinear/ISAM2.h>
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
-
-#include"LOAMmapping.h"
-#include "globalOpt.h"
 
 using namespace gtsam;
 
@@ -644,7 +643,7 @@ public:
                     
                     scan2MapOptimization();
                     
-                    float optTime = opt.toc();
+                    // float optTime = opt.toc();
                     // cout<<"optimization: "<<optTime<<endl; // > 90% of the total time
                     
                     // TicToc optPose;
@@ -718,16 +717,17 @@ public:
         cout<<" DO gtsam optimization here"<<endl;
         TicToc t_merge;
         int priorNode = 0;
+        
         // gtsam
         NonlinearFactorGraph gtSAMgraphTM;
-        Values initialEstimateTM;
-        Values optimizedEstimateTM;
+        Values initialEstimateTM;        
         ISAM2 *isamTM;
         Values isamCurrentEstimateTM;
         ISAM2Params parameters;
         parameters.relinearizeThreshold = 0.1;
         parameters.relinearizeSkip = 1;
         isamTM = new ISAM2(parameters);
+
         noiseModel::Diagonal::shared_ptr priorNoise = noiseModel::Diagonal::Variances((Vector(6) << 1e-2, 1e-2, 1e-2, 1e-1, 1e-1, 1e-1).finished()); // rad*rad, meter*meter
         gtsam::Pose3 posePrior = pclPointTogtsamPose3(temporaryCloudKeyPoses6D->points[priorNode]);
         gtSAMgraphTM.add(PriorFactor<Pose3>(priorNode, posePrior, priorNoise));
@@ -2084,7 +2084,7 @@ public:
     int saveFrame()
     {
         // indoor 1; outdoor 0; not a keyframe -1
-        if (relocSuccess == false ) return -1;
+        if (localizationMode == true && relocSuccess == false ) return -1;
         // the frame for merging should be keyframe
         if (cloudKeyPoses3D->empty() || goodToMergeMap == true)    return isIndoorJudgement();
         // allow overlapped area to display loop closures

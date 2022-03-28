@@ -7,7 +7,7 @@ kloam:
   saveKeyframeMapDirectory:  "/media/binpeng/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-01-15-gps-fastlio/keyframes" # for relocalization
   saveRawCloud: false
 
-  initialGuess: [-0.017984725855664, 0.012800135555456, -0.239421644654498, 75.3285, 106.723,-3.231]
+  # initialGuess: [-0.017984725855664, 0.012800135555456, -0.239421644654498, 75.3285, 106.723,-3.231]
   saveMatchingError: false
   mapLoaded: false
   relocSuccess: false
@@ -28,7 +28,7 @@ kloam:
   surroundingKeyframeSearchRadius: 50.0         # 20 is not okay; meters, within n meters scan-to-map optimization (when loop closure disabled)
   # Topics
   pointCloudTopic: cloud_registered_body              # Point cloud data
-  imuTopic: imu/data                        # IMU data
+  imuTopic: imu/data1                        # IMU data
   # odomTopic: "odometry/imu"                   # IMU pre-preintegration odometry, same frequency as IMU
   odomTopic: odom
   gpsTopic: fix1                # GPS odometry topic from navsat, see module_navsat.launch file

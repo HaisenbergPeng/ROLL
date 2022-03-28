@@ -3,8 +3,10 @@
 #define _UTILITY_H_
 
 #include"tic_toc.h"
-#include <ros/ros.h>
 
+#include <ceres/ceres.h>
+
+#include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <std_msgs/Header.h>
 #include <std_msgs/Float64MultiArray.h>
@@ -15,6 +17,8 @@
 #include <nav_msgs/Path.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
+
 
 #include <Eigen/Dense>
 #include <opencv/cv.h>

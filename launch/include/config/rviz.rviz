@@ -474,12 +474,12 @@ Visualization Manager:
           Color: 255; 255; 255
           Color Transformer: Intensity
           Decay Time: 0
-          Enabled: true
+          Enabled: false
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Max Intensity: 30.0996399
           Min Color: 0; 0; 0
-          Min Intensity: 0.000257587992
+          Min Intensity: 0.00012136811
           Name: Map (local_temporal)
           Position Transformer: XYZ
           Queue Size: 10
@@ -491,7 +491,7 @@ Visualization Manager:
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
-          Value: true
+          Value: false
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
@@ -509,7 +509,7 @@ Visualization Manager:
           Max Color: 255; 255; 255
           Max Intensity: 30.1000004
           Min Color: 0; 0; 0
-          Min Intensity: 0.000208847807
+          Min Intensity: 0.000223082956
           Name: Map (global)
           Position Transformer: XYZ
           Queue Size: 10
@@ -526,12 +526,12 @@ Visualization Manager:
           Buffer Length: 1
           Class: rviz/Path
           Color: 25; 255; 0
-          Enabled: false
+          Enabled: true
           Head Diameter: 0.300000012
           Head Length: 0.200000003
           Length: 0.300000012
-          Line Style: Lines
-          Line Width: 0.0299999993
+          Line Style: Billboards
+          Line Width: 0.0500000007
           Name: PathFusion
           Offset:
             X: 0
@@ -544,7 +544,7 @@ Visualization Manager:
           Shaft Length: 0.100000001
           Topic: /kloam/mapping/path_fusion
           Unreliable: false
-          Value: false
+          Value: true
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
@@ -560,7 +560,7 @@ Visualization Manager:
           Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
-          Max Intensity: 1358
+          Max Intensity: 1496
           Min Color: 0; 0; 0
           Min Intensity: 0
           Name: key_poses
@@ -729,8 +729,8 @@ Visualization Manager:
       Head Diameter: 0.300000012
       Head Length: 0.200000003
       Length: 0.300000012
-      Line Style: Lines
-      Line Width: 0.0299999993
+      Line Style: Billboards
+      Line Width: 0.0500000007
       Name: VINSfusionPath
       Offset:
         X: 0
@@ -767,11 +767,41 @@ Visualization Manager:
       Topic: /global_path_gtsam
       Unreliable: false
       Value: false
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 10
+      Enabled: false
+      Invert Rainbow: false
+      Max Color: 255; 0; 0
+      Max Intensity: 7657.65527
+      Min Color: 0; 0; 0
+      Min Intensity: 0.669926345
+      Name: errCloud
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.100000001
+      Style: Flat Squares
+      Topic: /kloam/mapping/errorCloud
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 0; 0; 0
     Default Light: true
-    Fixed Frame: map
+    Fixed Frame: odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -787,35 +817,35 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 138.46489
+      Distance: 205.829681
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -11.5649929
-        Y: -25.4851589
-        Z: 0.000260540372
+        X: -26.8200741
+        Y: 4.7238636
+        Z: 0.000235427113
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: -1.46979642
+      Pitch: -1.56979632
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 5.92361116
+      Yaw: 6.09360504
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
   Height: 1056
-  Hide Left Dock: true
+  Hide Left Dock: false
   Hide Right Dock: true
   Image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001a4000003dafc020000000cfb0000001200530065006c0065006300740069006f006e0000000028000003da0000006100fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb0000000a0049006d0061006700650000000028000001340000001600fffffffb000000100044006900730070006c0061007900730000000028000003da000000d700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730000000028000002a40000006100fffffffb0000000a0049006d0061006700650100000334000000ce0000000000000000fb000000100044006900730070006c0061007900730000000028000003da000000d700fffffffb000000100044006900730070006c0061007900730000000028000003da000000d700ffffff0000000100000111000003dafc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730000000028000003da000000ad00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004b000000040fc0100000002fb0000000800540069006d00650000000000000004b00000000000000000fb0000000800540069006d006501000000000000045000000000000000000000073f000003da00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001a4000003dafc020000000cfb0000001200530065006c0065006300740069006f006e0000000028000003da0000006100fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb0000000a0049006d0061006700650000000028000001340000001600fffffffb000000100044006900730070006c0061007900730100000028000003da000000d700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730000000028000002a40000006100fffffffb0000000a0049006d0061006700650100000334000000ce0000000000000000fb000000100044006900730070006c0061007900730000000028000003da000000d700fffffffb000000100044006900730070006c0061007900730000000028000003da000000d700ffffff0000000100000111000003dafc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730000000028000003da000000ad00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004b000000040fc0100000002fb0000000800540069006d00650000000000000004b00000000000000000fb0000000800540069006d0065010000000000000450000000000000000000000595000003da00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Tool Properties:
