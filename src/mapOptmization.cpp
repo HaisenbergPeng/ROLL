@@ -1317,6 +1317,8 @@ public:
             cloudKeyPoses3DDS->push_back(pt);
         }
          cout<<"outdoor: "<<keyPosesOutdoorDS->size()<<" frames" <<endl;
+
+        
     }
 
     void visualizeGlobalMapThread()

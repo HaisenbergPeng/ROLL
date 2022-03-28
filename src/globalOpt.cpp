@@ -78,7 +78,7 @@ void GlobalOptimization::inputOdom(double t, Eigen::Matrix4d affine)
     					     OdomQ.w(), OdomQ.x(), OdomQ.y(), OdomQ.z()};
     localPoseMap[t] = localPose;
 
-    cout<<setiosflags(ios::fixed)<<setprecision(6)<<"lio: "<<t<<endl;
+    // cout<<setiosflags(ios::fixed)<<setprecision(6)<<"lio: "<<t<<endl;
 
     Eigen::Quaterniond globalQ;
     globalQ = WGlobal_T_WLocal.block<3, 3>(0, 0) * OdomQ;
@@ -133,7 +133,7 @@ void GlobalOptimization::inputGlobalLocPose(double t, Eigen::Matrix4d affine, do
     // vector<double> globalLocPose{locP.x(), locP.y(), locP.z(),t_error};
     // globalLocPoseMap[t] = globalLocPose; 
 
-    cout<<setiosflags(ios::fixed)<<setprecision(6)<<"global matching: "<<t<<endl;
+    // cout<<setiosflags(ios::fixed)<<setprecision(6)<<"global matching: "<<t<<endl;
 
     if (reInitialize == true && (int)globalLocPoseMap.size() < 10) 
     {
@@ -240,7 +240,7 @@ void GlobalOptimization::optimize()
             for (iterLIO = localPoseMap.begin(); iterLIO != localPoseMap.end(); iterLIO++, i++,iterIni++)
             {
                 //vio factor
-                cout<<"i lio pose: " <<i<<endl;
+                // cout<<"i lio pose: " <<i<<endl;
                 iterLIOnext = iterLIO;
                 iterLIOnext++;
                 if(iterLIOnext != localPoseMap.end())
@@ -256,7 +256,11 @@ void GlobalOptimization::optimize()
                 if (iterGlobalLoc != globalLocPoseMap.end())
                 {
                     gtsam::Pose3 poseGlobal = QT2gtsamPose(iterGlobalLoc->second);
-                    noiseModel::Diagonal::shared_ptr corrNoise = noiseModel::Diagonal::Variances((Vector(6) << 1e-1, 1e-1, 1e-1, 1e-1, 1e-1, 1e-1).finished()); // rad*rad, meter*meter
+                    // seeems to be overconfident
+                    // noiseModel::Diagonal::shared_ptr corrNoise = noiseModel::Diagonal::Variances((Vector(6) << 1e-1, 1e-1, 1e-1, 1e-1, 1e-1, 1e-1).finished()); // rad*rad, meter*meter
+                    double tE = iterGlobalLoc->second[7];
+                    double tQ = iterGlobalLoc->second[8];
+                    noiseModel::Diagonal::shared_ptr corrNoise = noiseModel::Diagonal::Variances((Vector(6) << tQ*tQ,tQ*tQ,tQ*tQ,tE*tE,tE*tE,tE*tE).finished()); // rad*rad, meter*meter
                     gtSAMgraphTM.add(PriorFactor<Pose3>(i, poseGlobal, corrNoise));
                     found++;
 
@@ -282,7 +286,7 @@ void GlobalOptimization::optimize()
                 continue;
             }
 
-            cout<<"found: "<<found<<endl; // why zero from the start???
+            // cout<<"found: "<<found<<endl; // why zero from the start???
             isamTM->update(gtSAMgraphTM, initialEstimateTM);
             isamTM->update();
             isamTM->update();
@@ -291,7 +295,7 @@ void GlobalOptimization::optimize()
 
             isamCurrentEstimateTM = isamTM->calculateEstimate();
 
-            cout<<"Estimate size: "<<length<<endl;
+            // cout<<"Estimate size: "<<length<<endl;
             // update global pose
             iterIni = globalPoseMap.begin();
 
@@ -320,18 +324,17 @@ void GlobalOptimization::optimize()
                 if (i == 0 ) start = WGlobal_T_WLocal;
                 if (i == length - 1 ) end = WGlobal_T_WLocal;
             }
-
-
-            // Tgl change too much, forfeit this optimization
-            Eigen::Matrix4d TglDelta = start.inverse()*end;
-            // cout<<"x y z: "<<TglDelta(0,3)<<" "<<TglDelta(1,3)<<" "<<TglDelta(2,3)<<endl;
-            double deltaTransGL = sqrt(TglDelta(0,3)*TglDelta(0,3) +  TglDelta(1,3)*TglDelta(1,3) + TglDelta(2,3)*TglDelta(2,3) );
+            
 
             // cout<<"Tgl change "<<deltaTransGL<<endl;
             // w. consistency check
 
             // interesting: implementation in gtsam has no need for CC
 
+            // Tgl change too much, forfeit this optimization
+            // Eigen::Matrix4d TglDelta = start.inverse()*end;
+            // cout<<"x y z: "<<TglDelta(0,3)<<" "<<TglDelta(1,3)<<" "<<TglDelta(2,3)<<endl;
+            // double deltaTransGL = sqrt(TglDelta(0,3)*TglDelta(0,3) +  TglDelta(1,3)*TglDelta(1,3) + TglDelta(2,3)*TglDelta(2,3) );
             // if ( deltaTransGL > 0.5)
             // {
             //     cout<<"reset when deltaTgl = "<<deltaTransGL<<endl;
