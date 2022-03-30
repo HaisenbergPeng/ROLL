@@ -179,50 +179,50 @@ public:
 
     ParamServer()
     {
-        nh.param<double>("kloam/lati0", lati0, 0.0);
-        nh.param<double>("kloam/longi0", longi0, 0.0);
-        nh.param<double>("kloam/alti0", alti0, 0.0);
+        nh.param<double>("roll/lati0", lati0, 0.0);
+        nh.param<double>("roll/longi0", longi0, 0.0);
+        nh.param<double>("roll/alti0", alti0, 0.0);
 
-        nh.param<float>("kloam/starttemporaryMappingDistThre", starttemporaryMappingDistThre, 20.0);
-        nh.param<float>("kloam/inlierThreshold", inlierThreshold, 0.1);
-        nh.param<float>("kloam/startTemporaryMappingInlierRatioThre", startTemporaryMappingInlierRatioThre, 0.4);
-        nh.param<float>("kloam/exitTemporaryMappingInlierRatioThre", exitTemporaryMappingInlierRatioThre, 0.4);
-        nh.param<int>("kloam/slidingWindowSize", slidingWindowSize, 30);
+        nh.param<float>("roll/starttemporaryMappingDistThre", starttemporaryMappingDistThre, 20.0);
+        nh.param<float>("roll/inlierThreshold", inlierThreshold, 0.1);
+        nh.param<float>("roll/startTemporaryMappingInlierRatioThre", startTemporaryMappingInlierRatioThre, 0.4);
+        nh.param<float>("roll/exitTemporaryMappingInlierRatioThre", exitTemporaryMappingInlierRatioThre, 0.4);
+        nh.param<int>("roll/slidingWindowSize", slidingWindowSize, 30);
 
         nh.param<std::string>("/robot_id", robot_id, "roboat");
-        nh.param<int>("kloam/optIteration", optIteration,30);
-        nh.param<std::string>("kloam/pointCloudTopic", pointCloudTopic, "points_raw");
-        nh.param<std::string>("kloam/imuTopic", imuTopic, "imu_correct");
-        nh.param<std::string>("kloam/odomTopic", odomTopic, "odometry/imu");
-        nh.param<std::string>("kloam/gpsTopic", gpsTopic, "fix");
-        nh.param<std::string>("kloam/gtTopic", gtTopic, "ground_truth");
+        nh.param<int>("roll/optIteration", optIteration,30);
+        nh.param<std::string>("roll/pointCloudTopic", pointCloudTopic, "points_raw");
+        nh.param<std::string>("roll/imuTopic", imuTopic, "imu_correct");
+        nh.param<std::string>("roll/odomTopic", odomTopic, "odometry/imu");
+        nh.param<std::string>("roll/gpsTopic", gpsTopic, "fix");
+        nh.param<std::string>("roll/gtTopic", gtTopic, "ground_truth");
 
-        nh.param<std::string>("kloam/lidarFrame", lidarFrame, "base_link");
-        nh.param<std::string>("kloam/baselinkFrame", baselinkFrame, "base_link");
-        nh.param<std::string>("kloam/odometryFrame", odometryFrame, "odom");
-        nh.param<std::string>("kloam/mapFrame", mapFrame, "map");
+        nh.param<std::string>("roll/lidarFrame", lidarFrame, "base_link");
+        nh.param<std::string>("roll/baselinkFrame", baselinkFrame, "base_link");
+        nh.param<std::string>("roll/odometryFrame", odometryFrame, "odom");
+        nh.param<std::string>("roll/mapFrame", mapFrame, "map");
 
-        nh.param<bool>("kloam/useImuHeadingInitialization", useImuHeadingInitialization, false);
-        nh.param<bool>("kloam/useGpsElevation", useGpsElevation, false);
-        nh.param<float>("kloam/gpsCovThreshold", gpsCovThreshold, 2.0);
-        nh.param<float>("kloam/poseCovThreshold", poseCovThreshold, 25.0);
+        nh.param<bool>("roll/useImuHeadingInitialization", useImuHeadingInitialization, false);
+        nh.param<bool>("roll/useGpsElevation", useGpsElevation, false);
+        nh.param<float>("roll/gpsCovThreshold", gpsCovThreshold, 2.0);
+        nh.param<float>("roll/poseCovThreshold", poseCovThreshold, 25.0);
 
-        nh.param<bool>("kloam/saveMatchingError", saveMatchingError, true);
-        nh.param<bool>("kloam/savePCD", savePCD, false);
-        nh.param<bool>("kloam/savePose", savePose, false);
-        nh.param<bool>("kloam/saveKeyframeMap", saveKeyframeMap, false);
-        nh.param<bool>("kloam/saveRawCloud", saveRawCloud, false);
-        nh.param<bool>("kloam/localizationMode", localizationMode, false);
-        nh.param<bool>("kloam/mapUpdateEnabled", mapUpdateEnabled, false);
+        nh.param<bool>("roll/saveMatchingError", saveMatchingError, true);
+        nh.param<bool>("roll/savePCD", savePCD, false);
+        nh.param<bool>("roll/savePose", savePose, false);
+        nh.param<bool>("roll/saveKeyframeMap", saveKeyframeMap, false);
+        nh.param<bool>("roll/saveRawCloud", saveRawCloud, false);
+        nh.param<bool>("roll/localizationMode", localizationMode, false);
+        nh.param<bool>("roll/mapUpdateEnabled", mapUpdateEnabled, false);
 
         
-        nh.param<std::string>("kloam/saveMapDirectory", saveMapDirectory, "/Downloads/LOAM/");
-        nh.param<std::string>("kloam/loadKeyframeMapDirectory", loadKeyframeMapDirectory, "/Downloads/LOAM/");
-        nh.param<std::string>("kloam/saveKeyframeMapDirectory", saveKeyframeMapDirectory, "/Downloads/LOAM/");        
+        nh.param<std::string>("roll/saveMapDirectory", saveMapDirectory, "/Downloads/LOAM/");
+        nh.param<std::string>("roll/loadKeyframeMapDirectory", loadKeyframeMapDirectory, "/Downloads/LOAM/");
+        nh.param<std::string>("roll/saveKeyframeMapDirectory", saveKeyframeMapDirectory, "/Downloads/LOAM/");        
 
 
         std::string sensorStr;
-        nh.param<std::string>("kloam/sensor", sensorStr, "");
+        nh.param<std::string>("roll/sensor", sensorStr, "");
         if (sensorStr == "velodyne")
         {
             sensor = SensorType::VELODYNE;
@@ -242,44 +242,44 @@ public:
             ros::shutdown();
         }
 
-        nh.param<int>("kloam/N_SCAN", N_SCAN, 16);
-        nh.param<int>("kloam/Horizon_SCAN", Horizon_SCAN, 1800);
-        nh.param<int>("kloam/downsampleRate", downsampleRate, 1);
-        nh.param<float>("kloam/lidarMinRange", lidarMinRange, 1.0);
-        nh.param<float>("kloam/lidarMaxRange", lidarMaxRange, 1000.0);
+        nh.param<int>("roll/N_SCAN", N_SCAN, 16);
+        nh.param<int>("roll/Horizon_SCAN", Horizon_SCAN, 1800);
+        nh.param<int>("roll/downsampleRate", downsampleRate, 1);
+        nh.param<float>("roll/lidarMinRange", lidarMinRange, 1.0);
+        nh.param<float>("roll/lidarMaxRange", lidarMaxRange, 1000.0);
 
-        nh.param<vector<double>>("kloam/initialGuess", initialGuess, vector<double>(6, 0));
+        nh.param<vector<double>>("roll/initialGuess", initialGuess, vector<double>(6, 0));
 
-        nh.param<float>("kloam/edgeThreshold", edgeThreshold, 0.1);
-        nh.param<float>("kloam/surfThreshold", surfThreshold, 0.1);
-        nh.param<int>("kloam/edgeFeatureMinValidNum", edgeFeatureMinValidNum, 10);
-        nh.param<int>("kloam/surfFeatureMinValidNum", surfFeatureMinValidNum, 100);
+        nh.param<float>("roll/edgeThreshold", edgeThreshold, 0.1);
+        nh.param<float>("roll/surfThreshold", surfThreshold, 0.1);
+        nh.param<int>("roll/edgeFeatureMinValidNum", edgeFeatureMinValidNum, 10);
+        nh.param<int>("roll/surfFeatureMinValidNum", surfFeatureMinValidNum, 100);
 
-        nh.param<float>("kloam/odometrySurfLeafSize", odometrySurfLeafSize, 0.2);
-        nh.param<float>("kloam/mappingCornerLeafSize", mappingCornerLeafSize, 0.2);
-        nh.param<float>("kloam/mappingSurfLeafSize", mappingSurfLeafSize, 0.2);
+        nh.param<float>("roll/odometrySurfLeafSize", odometrySurfLeafSize, 0.2);
+        nh.param<float>("roll/mappingCornerLeafSize", mappingCornerLeafSize, 0.2);
+        nh.param<float>("roll/mappingSurfLeafSize", mappingSurfLeafSize, 0.2);
 
-        nh.param<float>("kloam/z_tollerance", z_tollerance, FLT_MAX);
-        nh.param<float>("kloam/rotation_tollerance", rotation_tollerance, FLT_MAX);
+        nh.param<float>("roll/z_tollerance", z_tollerance, FLT_MAX);
+        nh.param<float>("roll/rotation_tollerance", rotation_tollerance, FLT_MAX);
 
-        nh.param<int>("kloam/numberOfCores", numberOfCores, 2);
+        nh.param<int>("roll/numberOfCores", numberOfCores, 2);
 
-        nh.param<float>("kloam/surroundingkeyframeAddingDistThreshold", surroundingkeyframeAddingDistThreshold, 1.0);
-        nh.param<float>("kloam/surroundingkeyframeAddingAngleThreshold", surroundingkeyframeAddingAngleThreshold, 0.2);
-        nh.param<float>("kloam/surroundingKeyframeDensity", surroundingKeyframeDensity, 1.0);
-        nh.param<float>("kloam/surroundingKeyframeSearchRadius", surroundingKeyframeSearchRadius, 50.0);
+        nh.param<float>("roll/surroundingkeyframeAddingDistThreshold", surroundingkeyframeAddingDistThreshold, 1.0);
+        nh.param<float>("roll/surroundingkeyframeAddingAngleThreshold", surroundingkeyframeAddingAngleThreshold, 0.2);
+        nh.param<float>("roll/surroundingKeyframeDensity", surroundingKeyframeDensity, 1.0);
+        nh.param<float>("roll/surroundingKeyframeSearchRadius", surroundingKeyframeSearchRadius, 50.0);
 
-        nh.param<bool>("kloam/loopClosureEnableFlag", loopClosureEnableFlag, false);
-        nh.param<float>("kloam/loopClosureFrequency", loopClosureFrequency, 1.0);
-        nh.param<int>("kloam/surroundingKeyframeSize", surroundingKeyframeSize, 50);
-        nh.param<float>("kloam/historyKeyframeSearchRadius", historyKeyframeSearchRadius, 10.0);
-        nh.param<float>("kloam/historyKeyframeSearchTimeDiff", historyKeyframeSearchTimeDiff, 30.0);
-        nh.param<int>("kloam/historyKeyframeSearchNum", historyKeyframeSearchNum, 25);
-        nh.param<float>("kloam/historyKeyframeFitnessScore", historyKeyframeFitnessScore, 0.3);
+        nh.param<bool>("roll/loopClosureEnableFlag", loopClosureEnableFlag, false);
+        nh.param<float>("roll/loopClosureFrequency", loopClosureFrequency, 1.0);
+        nh.param<int>("roll/surroundingKeyframeSize", surroundingKeyframeSize, 50);
+        nh.param<float>("roll/historyKeyframeSearchRadius", historyKeyframeSearchRadius, 10.0);
+        nh.param<float>("roll/historyKeyframeSearchTimeDiff", historyKeyframeSearchTimeDiff, 30.0);
+        nh.param<int>("roll/historyKeyframeSearchNum", historyKeyframeSearchNum, 25);
+        nh.param<float>("roll/historyKeyframeFitnessScore", historyKeyframeFitnessScore, 0.3);
 
-        nh.param<float>("kloam/globalMapVisualizationSearchRadius", globalMapVisualizationSearchRadius, 1e3);
-        nh.param<float>("kloam/globalMapVisualizationPoseDensity", globalMapVisualizationPoseDensity, 10.0);
-        nh.param<float>("kloam/globalMapVisualizationLeafSize", globalMapVisualizationLeafSize, 1.0);
+        nh.param<float>("roll/globalMapVisualizationSearchRadius", globalMapVisualizationSearchRadius, 1e3);
+        nh.param<float>("roll/globalMapVisualizationPoseDensity", globalMapVisualizationPoseDensity, 10.0);
+        nh.param<float>("roll/globalMapVisualizationLeafSize", globalMapVisualizationLeafSize, 1.0);
         usleep(100);
     }
 };

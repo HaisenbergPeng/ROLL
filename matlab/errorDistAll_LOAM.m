@@ -75,7 +75,7 @@ for iB=1:setNum
     downsample = 10;
     lenGT = length(gtData{1});
     matGT = zeros(floor(lenGT/10),7);
-    %% kloam+fastlio uses imu pose, so here convert body pose to imu pose
+    %% roll+fastlio uses imu pose, so here convert body pose to imu pose
     tbi = [-0.11 -0.18 -0.71]';
     for i=1:floor(lenGT/10)
         for j=1:7

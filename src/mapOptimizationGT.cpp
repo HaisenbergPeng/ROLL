@@ -2,8 +2,8 @@
 //1. generate error cloud for visualization;
 //2. generate error tabulet with features(PCA eigenvalues, FPFH or ISHOT) calculated
 #include "utility.h"
-#include "kloam/cloud_info.h"
-#include "kloam/save_map.h"
+#include "roll/cloud_info.h"
+#include "roll/save_map.h"
 
 #include <gtsam/geometry/Rot3.h>
 #include <gtsam/geometry/Pose3.h>
@@ -128,8 +128,8 @@ public:
     ros::ServiceServer srvSaveMap;
 
     std::deque<nav_msgs::Odometry> gpsQueue;
-    kloam::cloud_info cloudInfo;
-    queue<kloam::cloud_infoConstPtr> cloudInfoBuffer;
+    roll::cloud_info cloudInfo;
+    queue<roll::cloud_infoConstPtr> cloudInfoBuffer;
     queue<nav_msgs::Odometry::ConstPtr> gtBuffer;
 
     vector<pcl::PointCloud<PointType>::Ptr> cornerCloudKeyFrames;
@@ -242,28 +242,28 @@ public:
         parameters.relinearizeSkip = 1;
         isam = new ISAM2(parameters);
 
-        pubErrCloud                 = nh.advertise<sensor_msgs::PointCloud2>("/kloam/mapping/errorCloud", 1);
+        pubErrCloud                 = nh.advertise<sensor_msgs::PointCloud2>("/roll/mapping/errorCloud", 1);
 
-        pubKeyPoses                 = nh.advertise<sensor_msgs::PointCloud2>("/kloam/mapping/key_poses", 1);
-        pubLidarCloudSurround       = nh.advertise<sensor_msgs::PointCloud2>("/kloam/mapping/map_global", 1);
-        pubLidarOdometryGlobal      = nh.advertise<nav_msgs::Odometry> ("/kloam/mapping/odometry", 1);
-        pubLidarOdometryGlobalFusion      = nh.advertise<nav_msgs::Odometry> ("/kloam/mapping/odometry_fusion", 1);
-        pubPath                     = nh.advertise<nav_msgs::Path>("/kloam/mapping/path", 1);
-        pubPathFusion               = nh.advertise<nav_msgs::Path>("/kloam/mapping/path_fusion", 1);
+        pubKeyPoses                 = nh.advertise<sensor_msgs::PointCloud2>("/roll/mapping/key_poses", 1);
+        pubLidarCloudSurround       = nh.advertise<sensor_msgs::PointCloud2>("/roll/mapping/map_global", 1);
+        pubLidarOdometryGlobal      = nh.advertise<nav_msgs::Odometry> ("/roll/mapping/odometry", 1);
+        pubLidarOdometryGlobalFusion      = nh.advertise<nav_msgs::Odometry> ("/roll/mapping/odometry_fusion", 1);
+        pubPath                     = nh.advertise<nav_msgs::Path>("/roll/mapping/path", 1);
+        pubPathFusion               = nh.advertise<nav_msgs::Path>("/roll/mapping/path_fusion", 1);
 
-        pubHistoryKeyFrames   = nh.advertise<sensor_msgs::PointCloud2>("/kloam/mapping/icp_loop_closure_history_cloud", 1);
-        pubIcpKeyFrames       = nh.advertise<sensor_msgs::PointCloud2>("/kloam/mapping/icp_loop_closure_corrected_cloud", 1);
-        pubLoopConstraintEdge = nh.advertise<visualization_msgs::MarkerArray>("/kloam/mapping/loop_closure_constraints", 1);
+        pubHistoryKeyFrames   = nh.advertise<sensor_msgs::PointCloud2>("/roll/mapping/icp_loop_closure_history_cloud", 1);
+        pubIcpKeyFrames       = nh.advertise<sensor_msgs::PointCloud2>("/roll/mapping/icp_loop_closure_corrected_cloud", 1);
+        pubLoopConstraintEdge = nh.advertise<visualization_msgs::MarkerArray>("/roll/mapping/loop_closure_constraints", 1);
 
-        pubRecentKeyFrames    = nh.advertise<sensor_msgs::PointCloud2>("/kloam/mapping/map_local", 1);
-        pubRecentKeyFrame     = nh.advertise<sensor_msgs::PointCloud2>("/kloam/mapping/cloud_registered", 1);
-        pubCloudRegisteredRaw = nh.advertise<sensor_msgs::PointCloud2>("/kloam/mapping/cloud_registered_raw", 1);
+        pubRecentKeyFrames    = nh.advertise<sensor_msgs::PointCloud2>("/roll/mapping/map_local", 1);
+        pubRecentKeyFrame     = nh.advertise<sensor_msgs::PointCloud2>("/roll/mapping/cloud_registered", 1);
+        pubCloudRegisteredRaw = nh.advertise<sensor_msgs::PointCloud2>("/roll/mapping/cloud_registered_raw", 1);
 
-        // subCloud = nh.subscribe<kloam::cloud_info>("/kloam/lidarOdometry/cloud_info_with_guess", 1, &mapOptimization::lidarCloudInfoHandler, this, ros::TransportHints().tcpNoDelay());
-        subCloud = nh.subscribe<kloam::cloud_info>("/kloam/feature/cloud_info", 10, &mapOptimization::lidarCloudInfoHandler, this);
+        // subCloud = nh.subscribe<roll::cloud_info>("/roll/lidarOdometry/cloud_info_with_guess", 1, &mapOptimization::lidarCloudInfoHandler, this, ros::TransportHints().tcpNoDelay());
+        subCloud = nh.subscribe<roll::cloud_info>("/roll/feature/cloud_info", 10, &mapOptimization::lidarCloudInfoHandler, this);
         subGT = nh.subscribe<nav_msgs::Odometry> ("/ground_truth", 10, &mapOptimization::gtHandler,this);
 
-        srvSaveMap  = nh.advertiseService("/kloam/save_map", &mapOptimization::saveMapService, this);
+        srvSaveMap  = nh.advertiseService("/roll/save_map", &mapOptimization::saveMapService, this);
     
         downSizeFilterCorner.setLeafSize(mappingCornerLeafSize, mappingCornerLeafSize, mappingCornerLeafSize);
         downSizeFilterSurf.setLeafSize(mappingSurfLeafSize, mappingSurfLeafSize, mappingSurfLeafSize);
@@ -396,7 +396,7 @@ public:
         
     }
 
-    void lidarCloudInfoHandler(const kloam::cloud_infoConstPtr& msgIn)
+    void lidarCloudInfoHandler(const roll::cloud_infoConstPtr& msgIn)
     {
         mtx.lock();
         cloudInfoBuffer.push(msgIn);
@@ -462,7 +462,7 @@ public:
                 // cout<<std::ios::fixed<<setprecision(6)<<lidarOdometryTime<<" "<<cloudInfoTime<<endl;
                 // extract info and feature cloud
                 TicToc mapping;
-                kloam::cloud_infoConstPtr cloudInfoMsg = cloudInfoBuffer.front();
+                roll::cloud_infoConstPtr cloudInfoMsg = cloudInfoBuffer.front();
                 nav_msgs::Odometry::ConstPtr gtMsg =  gtBuffer.front();
 
                 
@@ -751,7 +751,7 @@ public:
 
     
     
-    bool saveMapService(kloam::save_mapRequest& req, kloam::save_mapResponse& res)
+    bool saveMapService(roll::save_mapRequest& req, roll::save_mapResponse& res)
     {        
 
         float resMap,resPoseIndoor,resPoseOutdoor;
@@ -1062,8 +1062,8 @@ public:
         if (savePCD == false && saveKeyframeMap == false && savePose == false)
             return;
 
-        kloam::save_mapRequest  req;
-        kloam::save_mapResponse res;
+        roll::save_mapRequest  req;
+        roll::save_mapResponse res;
 
         if (!doneSavingMap)
         {
@@ -1255,7 +1255,7 @@ public:
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "kloam");
+    ros::init(argc, argv, "roll");
 
     mapOptimization MO_ground_truth;
 

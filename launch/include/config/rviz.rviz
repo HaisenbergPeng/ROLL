@@ -181,7 +181,7 @@ Visualization Manager:
             Shaft Length: 1
             Shaft Radius: 0.0500000007
             Value: Axes
-          Topic: /kloam/mapping/odometry
+          Topic: /roll/mapping/odometry
           Unreliable: false
           Value: false
       Enabled: false
@@ -213,7 +213,7 @@ Visualization Manager:
           Size (Pixels): 5
           Size (m): 0.00999999978
           Style: Points
-          Topic: /kloam/feature/cloud_corner_sharp
+          Topic: /roll/feature/cloud_corner_sharp
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -243,7 +243,7 @@ Visualization Manager:
           Size (Pixels): 5
           Size (m): 0.00999999978
           Style: Points
-          Topic: /kloam/feature/cloud_surface_flat
+          Topic: /roll/feature/cloud_surface_flat
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -273,7 +273,7 @@ Visualization Manager:
           Size (Pixels): 5
           Size (m): 0.00999999978
           Style: Points
-          Topic: /kloam/feature/cloud_corner_sharp
+          Topic: /roll/feature/cloud_corner_sharp
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -303,7 +303,7 @@ Visualization Manager:
           Size (Pixels): 3
           Size (m): 0.00999999978
           Style: Flat Squares
-          Topic: /kloam/lidarOdometry/feature_cloud_last
+          Topic: /roll/lidarOdometry/feature_cloud_last
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -333,7 +333,7 @@ Visualization Manager:
           Size (Pixels): 3
           Size (m): 0.00999999978
           Style: Flat Squares
-          Topic: /kloam/lidarOdometry/feature_cloud_cur
+          Topic: /roll/lidarOdometry/feature_cloud_cur
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -363,7 +363,7 @@ Visualization Manager:
           Size (Pixels): 5
           Size (m): 0.00999999978
           Style: Points
-          Topic: /kloam/feature/cloud_surface_flat
+          Topic: /roll/feature/cloud_surface_flat
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -393,7 +393,7 @@ Visualization Manager:
           Size (Pixels): 3
           Size (m): 0.00999999978
           Style: Flat Squares
-          Topic: /kloam/feature/cloud_raw
+          Topic: /roll/feature/cloud_raw
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -423,7 +423,7 @@ Visualization Manager:
           Size (Pixels): 2
           Size (m): 0.00999999978
           Style: Points
-          Topic: /kloam/feature/cloud_projected
+          Topic: /roll/feature/cloud_projected
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -457,7 +457,7 @@ Visualization Manager:
           Size (Pixels): 1
           Size (m): 0.00999999978
           Style: Points
-          Topic: /kloam/mapping/merged_map
+          Topic: /roll/mapping/merged_map
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -487,7 +487,7 @@ Visualization Manager:
           Size (Pixels): 2
           Size (m): 1
           Style: Points
-          Topic: /kloam/mapping/map_local
+          Topic: /roll/mapping/map_local
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -517,7 +517,7 @@ Visualization Manager:
           Size (Pixels): 1
           Size (m): 0.00999999978
           Style: Points
-          Topic: /kloam/mapping/map_global
+          Topic: /roll/mapping/map_global
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -542,7 +542,7 @@ Visualization Manager:
           Radius: 0.0299999993
           Shaft Diameter: 0.100000001
           Shaft Length: 0.100000001
-          Topic: /kloam/mapping/path_fusion
+          Topic: /roll/mapping/path_fusion
           Unreliable: false
           Value: true
         - Alpha: 1
@@ -570,7 +570,7 @@ Visualization Manager:
           Size (Pixels): 3
           Size (m): 1.5
           Style: Flat Squares
-          Topic: /kloam/mapping/key_poses
+          Topic: /roll/mapping/key_poses
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -600,14 +600,14 @@ Visualization Manager:
           Size (Pixels): 2
           Size (m): 0.300000012
           Style: Flat Squares
-          Topic: /kloam/mapping/icp_loop_closure_corrected_cloud
+          Topic: /roll/mapping/icp_loop_closure_corrected_cloud
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
           Value: false
         - Class: rviz/MarkerArray
           Enabled: false
-          Marker Topic: /kloam/mapping/loop_closure_constraints
+          Marker Topic: /roll/mapping/loop_closure_constraints
           Name: Loop constraint
           Namespaces:
             {}
@@ -638,7 +638,7 @@ Visualization Manager:
           Size (Pixels): 3
           Size (m): 0.00999999978
           Style: Points
-          Topic: /kloam/mapping/cloud_registered
+          Topic: /roll/mapping/cloud_registered
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -668,7 +668,7 @@ Visualization Manager:
           Size (Pixels): 10
           Size (m): 1
           Style: Flat Squares
-          Topic: /kloam/mapping/tmp_key_poses
+          Topic: /roll/mapping/tmp_key_poses
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
@@ -741,7 +741,7 @@ Visualization Manager:
       Radius: 0.0299999993
       Shaft Diameter: 0.100000001
       Shaft Length: 0.100000001
-      Topic: /kloam/mapping/path_fusion_vins
+      Topic: /roll/mapping/path_fusion_vins
       Unreliable: false
       Value: true
     - Alpha: 1
@@ -792,7 +792,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.100000001
       Style: Flat Squares
-      Topic: /kloam/mapping/errorCloud
+      Topic: /roll/mapping/errorCloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true

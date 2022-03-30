@@ -340,7 +340,7 @@ void GlobalOptimization::optimize()
             //     cout<<"reset when deltaTgl = "<<deltaTransGL<<endl;
             //     resetOptimization(backupTgl);
             // }
-            // cout<<"optimization takes: "<<opt_time.toc()<<" ms"<<endl;
+            // cout<<"optimization takes: "<<opt_time.toc()<<" ms"<<endl; // gtsam implementation takes less than 10 ms
 
             mPoseMap.unlock();
         }

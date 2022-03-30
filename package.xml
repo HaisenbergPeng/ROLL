@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>kloam</name>
+  <name>roll</name>
   <version>1.0.0</version>
   <description>Lidar Odometry and Mapping</description>
 

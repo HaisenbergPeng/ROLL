@@ -1,8 +1,8 @@
 <launch>
 
-    <arg name="project" default="kloam"/>
+    <arg name="project" default="roll"/>
 
     <!--- Run Rviz-->
-    <node pkg="rviz" type="rviz" name="$(arg project)_rviz" args="-d $(find kloam)/launch/include/config/rviz.rviz" />
+    <node pkg="rviz" type="rviz" name="$(arg project)_rviz" args="-d $(find roll)/launch/include/config/rviz.rviz" />
 
 </launch>

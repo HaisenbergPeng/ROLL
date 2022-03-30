@@ -1,17 +1,17 @@
 <launch>
 
-    <arg name="project" default="kloam"/>
+    <arg name="project" default="roll"/>
     <!-- <param name="use_sim_time" value="true"/> -->
     <!-- EKF GPS-->
     <node pkg="robot_localization" type="ekf_localization_node" name="ekf_gps" respawn="true">
         <!-- <remap from="odometry/filtered" to="odometry/navsat" /> -->
-        <rosparam command="load" file="$(find kloam)/config/ekf.yaml" />
+        <rosparam command="load" file="$(find roll)/config/ekf.yaml" />
     </node>
 
     <!-- Navsat -->
     <!-- datum latitude,longitude, altitude -->
     <node pkg="robot_localization" type="navsat_transform_node" name="navsat" respawn="true">
-        <rosparam command="load" file="$(find kloam)/config/navsat.yaml"/>
+        <rosparam command="load" file="$(find roll)/config/navsat.yaml"/>
         <rosparam param="datum">[-33.889723, 151.1927187,46.069, world, base_link]</rosparam>
         <remap from="imu/data" to="/vn100/imu" />  
         <remap from="gps/fix" to="/ublox_gps/fix" />

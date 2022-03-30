@@ -35,7 +35,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "utility.h"
-#include "kloam/cloud_info.h"
+#include "roll/cloud_info.h"
 
 struct smoothness_t{ 
     float value;
@@ -88,14 +88,14 @@ public:
     {
         subLidarCloudInfo = nh.subscribe<sensor_msgs::PointCloud2>(pointCloudTopic, 1, &scanRegistration::lidarCloudHandler, this, ros::TransportHints().tcpNoDelay());
 
-        pubLidarCloudInfo = nh.advertise<kloam::cloud_info> ("/kloam/feature/cloud_info", 1);
-        pubRawPoints = nh.advertise<sensor_msgs::PointCloud2>("/kloam/feature/cloud_raw", 1);
-        pubProjPoints = nh.advertise<sensor_msgs::PointCloud2>("/kloam/feature/cloud_projected", 1);
-        pubCornerPoints = nh.advertise<sensor_msgs::PointCloud2>("/kloam/feature/cloud_corner", 1);
-        pubSurfacePoints = nh.advertise<sensor_msgs::PointCloud2>("/kloam/feature/cloud_surface", 1);
-        pubSurfacePoints2 = nh.advertise<sensor_msgs::PointCloud2>("/kloam/feature/cloud_surface2", 1);
-        pubFlatSurfacePoints = nh.advertise<sensor_msgs::PointCloud2>("/kloam/feature/cloud_surface_flat", 1);
-        pubSharpCornerPoints = nh.advertise<sensor_msgs::PointCloud2>("/kloam/feature/cloud_corner_sharp", 1);
+        pubLidarCloudInfo = nh.advertise<roll::cloud_info> ("/roll/feature/cloud_info", 1);
+        pubRawPoints = nh.advertise<sensor_msgs::PointCloud2>("/roll/feature/cloud_raw", 1);
+        pubProjPoints = nh.advertise<sensor_msgs::PointCloud2>("/roll/feature/cloud_projected", 1);
+        pubCornerPoints = nh.advertise<sensor_msgs::PointCloud2>("/roll/feature/cloud_corner", 1);
+        pubSurfacePoints = nh.advertise<sensor_msgs::PointCloud2>("/roll/feature/cloud_surface", 1);
+        pubSurfacePoints2 = nh.advertise<sensor_msgs::PointCloud2>("/roll/feature/cloud_surface2", 1);
+        pubFlatSurfacePoints = nh.advertise<sensor_msgs::PointCloud2>("/roll/feature/cloud_surface_flat", 1);
+        pubSharpCornerPoints = nh.advertise<sensor_msgs::PointCloud2>("/roll/feature/cloud_corner_sharp", 1);
         downSizeFilter.setLeafSize(odometrySurfLeafSize, odometrySurfLeafSize, odometrySurfLeafSize);
 
         // to avoid overflow (sometimes points in one frame can be a lot)
@@ -180,7 +180,7 @@ public:
     void lidarCloudHandler(const sensor_msgs::PointCloud2ConstPtr &lidarCloudMsg)
     {
 
-        kloam::cloud_info cloudInfo;
+        roll::cloud_info cloudInfo;
 
         TicToc t_whole;
         TicToc t_prepare;

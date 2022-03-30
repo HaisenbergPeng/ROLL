@@ -1,4 +1,4 @@
-kloam:
+roll:
   localizationMode: false
   saveKeyframeMap: true 
   savePose: true # for path recording purposes /reloc gt, save it to saveMapDirectory

@@ -37,7 +37,7 @@
 
 
 #include "utility.h"
-#include "kloam/cloud_info.h"
+#include "roll/cloud_info.h"
 #include "lidarFactor.hpp"
 
 #define DISTORTION 0
@@ -65,7 +65,7 @@ private:
 
     nav_msgs::Path odometryPath;
 
-    kloam::cloud_info cloudInfo;
+    roll::cloud_info cloudInfo;
     std::mutex mtx;
 
 	ros::NodeHandle nh;
@@ -109,10 +109,10 @@ public:
     vector<vector<double>> odomErrorPerFrame;
     lidarOdometry()
     {
-        subCloudInfo = nh.subscribe<kloam::cloud_info>("/kloam/feature/cloud_info", 1, &lidarOdometry::laserCloudInfoHandler, this, ros::TransportHints().tcpNoDelay());
-        pubLidarOdometry = nh.advertise<nav_msgs::Odometry> ("/kloam/lidarOdometry/laser_odom_to_init", 1);      
-        pubCloudInfo = nh.advertise<kloam::cloud_info> ("/kloam/lidarOdometry/cloud_info_with_guess", 1); 
-        pubLidarPath = nh.advertise<nav_msgs::Path> ("/kloam/lidarOdometry/laser_odom_path", 1); 
+        subCloudInfo = nh.subscribe<roll::cloud_info>("/roll/feature/cloud_info", 1, &lidarOdometry::laserCloudInfoHandler, this, ros::TransportHints().tcpNoDelay());
+        pubLidarOdometry = nh.advertise<nav_msgs::Odometry> ("/roll/lidarOdometry/laser_odom_to_init", 1);      
+        pubCloudInfo = nh.advertise<roll::cloud_info> ("/roll/lidarOdometry/cloud_info_with_guess", 1); 
+        pubLidarPath = nh.advertise<nav_msgs::Path> ("/roll/lidarOdometry/laser_odom_path", 1); 
         initializationValue();
     }
 
@@ -463,7 +463,7 @@ public:
         pubLidarPath.publish(odometryPath);
     }
 
-    void laserCloudInfoHandler(const kloam::cloud_infoConstPtr& msgIn)
+    void laserCloudInfoHandler(const roll::cloud_infoConstPtr& msgIn)
     {
         std::lock_guard<std::mutex> lock(mtx);
 
@@ -532,7 +532,7 @@ public:
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "kloam");
+    ros::init(argc, argv, "roll");
     lidarOdometry LO;   
     ROS_INFO("\033[1;32m----> Lidar Odometry Started.\033[0m");
     ros::spin();
