@@ -474,12 +474,12 @@ Visualization Manager:
           Color: 255; 255; 255
           Color Transformer: Intensity
           Decay Time: 0
-          Enabled: false
+          Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
-          Max Intensity: 30.0996399
+          Max Intensity: 30.0989227
           Min Color: 0; 0; 0
-          Min Intensity: 0.00012136811
+          Min Intensity: 0.000202593437
           Name: Map (local_temporal)
           Position Transformer: XYZ
           Queue Size: 10
@@ -491,7 +491,7 @@ Visualization Manager:
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
-          Value: false
+          Value: true
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
@@ -509,7 +509,7 @@ Visualization Manager:
           Max Color: 255; 255; 255
           Max Intensity: 30.1000004
           Min Color: 0; 0; 0
-          Min Intensity: 0.000223082956
+          Min Intensity: 0.000215452892
           Name: Map (global)
           Position Transformer: XYZ
           Queue Size: 10
@@ -557,10 +557,10 @@ Visualization Manager:
           Color: 255; 0; 0
           Color Transformer: Intensity
           Decay Time: 0
-          Enabled: false
+          Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
-          Max Intensity: 1496
+          Max Intensity: 1063
           Min Color: 0; 0; 0
           Min Intensity: 0
           Name: key_poses
@@ -574,7 +574,7 @@ Visualization Manager:
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
-          Value: false
+          Value: true
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
@@ -817,16 +817,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 7.39402723
+      Distance: 111.245193
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.12721336
-        Y: 1.93960953
-        Z: 0.000235427113
+        X: -30.3933258
+        Y: -3.64293003
+        Z: 0.000230426784
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
@@ -835,7 +835,7 @@ Visualization Manager:
       Pitch: -1.56979632
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 5.65860224
+      Yaw: 0.0104244072
     Saved: ~
 Window Geometry:
   Displays:

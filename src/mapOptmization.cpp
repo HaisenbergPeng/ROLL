@@ -1005,7 +1005,7 @@ public:
     
     bool saveMapService(roll::save_mapRequest& req, roll::save_mapResponse& res)
     {        
-        float resMap,resPoseIndoor,resPoseOutdoor;
+        float resMap,resPoseIndoor,resPoseOutdoor,overlapThre;
         
         if(req.resolutionMap != 0)            resMap = req.resolutionMap;
         else         resMap = 0.4;
@@ -1016,6 +1016,8 @@ public:
         if(req.resPoseOutdoor != 0)            resPoseOutdoor = req.resPoseOutdoor;
         else         resPoseOutdoor = 5.0;
 
+        if(req.overlapThre != 0)            overlapThre = req.overlapThre;
+        else         overlapThre = 0.9;
 
         float mappingTime = accumulate(mappingTimeVec.begin(),mappingTimeVec.end(),0.0);
         cout<<"Average time consumed by mapping is :"<<mappingTime/mappingTimeVec.size()<<" ms"<<endl;
@@ -1229,8 +1231,10 @@ public:
 
             cout<<"********************Saving keyframes and poses one by one**************************"<<endl;
             pcl::PointCloud<PointType>::Ptr cloudKeyPoses3DDS(new pcl::PointCloud<PointType>());
-            // keyframeSparsification(cloudKeyPoses3DDS,resPose,resMap,overlapThre);
-            keyframeSparsification(cloudKeyPoses3DDS,resMap,resPoseIndoor,resPoseOutdoor);
+
+            
+            keyframeSparsification(cloudKeyPoses3DDS,resMap,resPoseIndoor,resPoseOutdoor,overlapThre);
+            // keyframeSparsification(cloudKeyPoses3DDS,resMap,resPoseIndoor,resPoseOutdoor);
 
             int keyframeNDS = cloudKeyPoses3DDS->size();
             cout<<"There are "<<keyframeNDS<<" keyframes after downsampling"<<endl;
@@ -1270,12 +1274,17 @@ public:
     }
 
    
-    void keyframeSparsification(pcl::PointCloud<PointType>::Ptr  &cloudKeyPoses3DDS, float resMap, float resPoseIndoor, float  resPoseOutdoor)
+    void keyframeSparsification(pcl::PointCloud<PointType>::Ptr  &cloudKeyPoses3DDS, float resMap, float resPoseIndoor, float resPoseOutdoor,
+                                float overlapThre)
     {
+
+        TicToc sparsiTime;
+        pcl::PointCloud<PointType>::Ptr  cloudKeyPoses3DDSinit(new pcl::PointCloud<PointType>());
+
         pcl::KdTreeFLANN<PointType>::Ptr kdtreeGlobalKeyPoses(new pcl::KdTreeFLANN<PointType>());
         kdtreeGlobalKeyPoses->setInputCloud(cloudKeyPoses3D);
 
-        // separate indoor or outdoor
+        // separate indoor or outdoor, sparsify crudely
         pcl::PointCloud<PointType>::Ptr keyPosesIndoor(new pcl::PointCloud<PointType>());
         pcl::PointCloud<PointType>::Ptr keyPosesOutdoor(new pcl::PointCloud<PointType>());
         pcl::PointCloud<PointType>::Ptr keyPosesIndoorDS(new pcl::PointCloud<PointType>());
@@ -1297,12 +1306,13 @@ public:
         downSizeFilterGlobalMapKeyPosesO.setLeafSize(resPoseIndoor,resPoseIndoor,resPoseIndoor);
         downSizeFilterGlobalMapKeyPosesO.setInputCloud(keyPosesIndoor);
         downSizeFilterGlobalMapKeyPosesO.filter(*keyPosesIndoorDS);
-        // fix the keyframe downsample bug
+
+        // fix the keyframe downsample bug, keep intensity as an index of adding sequence
         for(auto& pt : keyPosesIndoorDS->points)
         {
             kdtreeGlobalKeyPoses->nearestKSearch(pt, 1, pointSearchIndGlobalMap, pointSearchSqDisGlobalMap);
             pt.intensity = cloudKeyPoses3D->points[pointSearchIndGlobalMap[0]].intensity;
-            cloudKeyPoses3DDS->push_back(pt);
+            cloudKeyPoses3DDSinit->push_back(pt);
         }
         cout<<"indoor: "<<keyPosesIndoorDS->size()<<" frames" <<endl;
         //outdoor
@@ -1314,11 +1324,83 @@ public:
         {
             kdtreeGlobalKeyPoses->nearestKSearch(pt, 1, pointSearchIndGlobalMap, pointSearchSqDisGlobalMap);
             pt.intensity = cloudKeyPoses3D->points[pointSearchIndGlobalMap[0]].intensity;
-            cloudKeyPoses3DDS->push_back(pt);
+            cloudKeyPoses3DDSinit->push_back(pt);
         }
          cout<<"outdoor: "<<keyPosesOutdoorDS->size()<<" frames" <<endl;
 
-        
+        //starting from small indexes, add frames with overlap less than miu (with no consideration of scene changes!)
+        float searchR = 30.0;
+        //init chosen key poses
+        cloudKeyPoses3DDS->push_back(cloudKeyPoses3DDSinit->points[0]);
+        for(int i = 1; i < (int)cloudKeyPoses3DDSinit->size(); i++)
+        {
+            
+            // find chosen key poses within searchR for the current key pose
+            pcl::KdTreeFLANN<PointType>::Ptr tmpTree(new pcl::KdTreeFLANN<PointType>());
+            vector<int> idxes;
+            vector<float> distances;
+            tmpTree->setInputCloud(cloudKeyPoses3DDS);
+            tmpTree->radiusSearch(cloudKeyPoses3DDSinit->points[i],searchR,idxes, distances);
+
+            if (idxes.empty())           
+            {
+                // cout<<"no nearby key poses, wierd"<<endl;
+                cloudKeyPoses3DDS->push_back(cloudKeyPoses3DDSinit->points[i]);
+                continue;
+            }
+
+            // build kdtree of the local map using found keyframes
+            pcl::PointCloud<PointType>::Ptr  localMap(new pcl::PointCloud<PointType>());
+            for (int j = 0; j < (int)idxes.size(); j++)
+            {
+                int thisKeyInd = (int)cloudKeyPoses3DDS->points[idxes[j]].intensity;
+                *localMap += *transformPointCloud(cornerCloudKeyFrames[thisKeyInd],  &cloudKeyPoses6D->points[thisKeyInd]);
+                *localMap += *transformPointCloud(surfCloudKeyFrames[thisKeyInd],    &cloudKeyPoses6D->points[thisKeyInd]);
+            }
+
+            // pcl::io::savePCDFileBinary(saveMapDirectory + "/1.pcd",*localMap);
+            // cout<<"nearby key pose size: "<<idxes.size()<<endl;
+            pcl::KdTreeFLANN<PointType>::Ptr tmpTree2(new pcl::KdTreeFLANN<PointType>());
+            vector<int> idxes2;
+            vector<float> distances2;
+            tmpTree2->setInputCloud(localMap);
+
+            // get overlap ratio of the current keyframe in the local map
+            int cnt = 0;
+            int currentIdx = cloudKeyPoses3DDSinit->points[i].intensity;
+
+            int sizeCorner = cornerCloudKeyFrames[currentIdx]->size();
+            pcl::PointCloud<PointType>::Ptr  cornerCloud(new pcl::PointCloud<PointType>());
+            cornerCloud = transformPointCloud(cornerCloudKeyFrames[currentIdx],  &cloudKeyPoses6D->points[currentIdx]);
+            for (int k = 0; k < sizeCorner; k++)
+            {
+                tmpTree2->nearestKSearch(cornerCloud->points[k],1,idxes2, distances2);
+                if (distances2[0] < resMap) cnt++;
+            }
+
+            int sizeSurf = surfCloudKeyFrames[currentIdx]->size();
+            pcl::PointCloud<PointType>::Ptr  surfCloud(new pcl::PointCloud<PointType>());
+            surfCloud = transformPointCloud(surfCloudKeyFrames[currentIdx],  &cloudKeyPoses6D->points[currentIdx]);
+            for (int k = 0; k < sizeSurf; k++)
+            {
+                tmpTree2->nearestKSearch(surfCloud->points[k],1,idxes2, distances2);
+                if (distances2[0] < resMap) cnt++;
+            }
+
+            float overlap = (float)(cnt)/(sizeCorner + sizeSurf);
+
+            if (overlap < overlapThre) 
+            {
+                cloudKeyPoses3DDS->push_back(cloudKeyPoses3DDSinit->points[i]);
+            }
+
+            // cout<<"overlap: "<<overlap<<" finishing "<<i<<endl;
+            if (i%100 == 0)
+            cout<<"finished processed"<< i <<"keyframes"<<endl;
+
+        }
+        cout<<"after sparsification: "<<cloudKeyPoses3DDS->size()<<endl;
+        cout<<"sparsification takes "<<sparsiTime.toc()/1000<<" sec "<<endl;
         
     }
 

@@ -5,15 +5,15 @@ startDate = "2012-01-15";
 %% LOMAL
 dateLists = ["2012-02-02","2012-03-17","2012-04-29",...
     "2012-05-11","2012-06-15","2012-08-04","2012-11-17","2013-01-10","2013-02-23"]';
-folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2";
+folder = "/mnt/sdb/Datasets/NCLT/datasets/fastlio_loc2";
 
 % %% no TM
 % dateLists = ["2012-02-02","2012-03-17","2012-04-29","2012-05-11"]';
-% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noTMM";
+% folder = "/mnt/sdb/Datasets/NCLT/datasets/fastlio_noTMM";
 
 % %% no CC
 % dateLists = ["2012-02-02","2012-03-17","2012-04-29","2012-05-11"]';
-% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noCC";
+% folder = "/mnt/sdb/Datasets/NCLT/datasets/fastlio_noCC";
 
 setNum = length(dateLists);
 daysPassed = cntDays(startDate,dateLists);
@@ -45,7 +45,7 @@ for iB=1:setNum
 %     poseFilePath = folder+"/"+date+"/map_pcd/path_mapping.txt";
 %     poseFilePath = folder+"/"+date+"/map_pcd/path_fusion.txt"; 
     poseFilePath = folder+"/"+date+"/map_pcd/path_vinsfusion.txt";
-    gtFilePath = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/"+date+"/groundtruth_"+date+".csv";
+    gtFilePath = "/mnt/sdb/Datasets/NCLT/datasets/"+date+"/groundtruth_"+date+".csv";
 
     %% log file reading
     fID = fopen(logFilePath);
@@ -187,7 +187,7 @@ disp("1.0 m percent for all: " + 100*length(find(ateAll<1.0))/length(ateAll)  );
 disp("Loc rate: "+length(ateAll)/timeAll)
 % disp("Success ratio: "+length(find(ateError < 1.0))/(timeGT(end)-timeGT(1))/10)
 %% error space distribution
-gtFilePath = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/"+startDate+"/groundtruth_"+startDate+".csv";
+gtFilePath = "/mnt/sdb/Datasets/NCLT/datasets/"+startDate+"/groundtruth_"+startDate+".csv";
 fID3 = fopen(gtFilePath);
 gtData = textscan(fID3, "%f%s%f%s%f%s%f%s%f%s%f%s%f");
 % downsample

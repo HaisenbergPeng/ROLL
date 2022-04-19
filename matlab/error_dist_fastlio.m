@@ -1,50 +1,26 @@
-% clc
-% clear;
-% close all
+clc
+clear;
+close all
 %% Sometimes the code malfunctions and you will get wierd statistics;
 % don't know why so just reboot the MATLAB
-% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noTMM";
-folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2";
-% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/no_LIO";
-% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/LOAM";
+% folder = "/mnt/sdb/Datasets/NCLT/datasets/fastlio_noTMM";
+folder = "/mnt/sdb/Datasets/NCLT/datasets/fastlio_loc2";
+% folder = "/mnt/sdb/Datasets/NCLT/datasets/no_LIO";
+% folder = "/mnt/sdb/Datasets/NCLT/datasets/LOAM";
 
 date = "2012-05-11";
-logFilePath = folder+"/"+date+"/map_pcd/mappingError.txt";
-% poseFilePath = folder+"/"+date+"/map_pcd/path_mapping.txt";
-poseFilePath = folder+"/"+date+"/map_pcd/path_vinsfusion.txt";
-% poseFilePath = folder+"/"+date+"/map_pcd/path_fusion.txt";
+poseFilePath = "/home/haisenberg/Documents/ROLL/src/FAST_LIO/Log/test0511/pos_log.txt";
 gtFilePath = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/"+date+"/groundtruth_"+date+".csv";
 
 %% log file reading
-fID = fopen(logFilePath);
+fID = fopen(poseFilePath);
 strPattern = "";
-n = 11;
+n = 25;
 for i=1:n
     strPattern = strPattern+"%f";
 end
 logData = textscan(fID,strPattern);
-timeLog = logData{1}-logData{1}(1);
-regiError = logData{5};
-inlierRatio2 = logData{4};
-inlierRatio = logData{3};
-isTMM = logData{2};
-
-%% pose file reading
-fID2 = fopen(poseFilePath);
-strPattern = "";
-n = 7;
-for i=1:n
-    strPattern = strPattern+"%f";
-end
-poseData = textscan(fID2,strPattern);
-lenPose = length(poseData{1});
-matPose = zeros(lenPose,7);
-for i=1:lenPose
-    for j=1:7
-        matPose(i,j) = poseData{j}(i);
-    end
-end
-
+matPose =[logData{1},logData{5},logData{6},logData{7},logData{2},logData{3},logData{4}];
 %% gt reading
 % readcsv readmatrix:sth is wrong
 fID3 = fopen(gtFilePath);
@@ -66,10 +42,9 @@ for i=1:floor(lenGT/downsample)
 end
 
 %% sync with time
-timeGT = matGT(:,1)/1e+6; % us -> sec
-timePose =  matPose(:,1)/1e+6;
-% timeGT = timeGT -timeGT(1);
-% timePose = timePose - timePose(1);
+timeGT = (matGT(:,1)-matGT(1,1))/1e+6; % us -> sec
+timePose = (matPose(:,1)-matPose(1,1)); % sec -> sec
+lenPose = length(timePose);
 % MDtimeGT = KDTreeSearcher(timeGT);
 [idx, D] = rangesearch(timeGT,timePose,0.05);
 ateErrorINI = zeros(lenPose,1);
@@ -81,16 +56,11 @@ for i=1:lenPose
         not_found = not_found + 1;
         continue;    
     end
-        %% rule out obvious wrong ground truth
-    if date=="2013-02-23" && matPose(i,2)>-310 && matPose(i,2)<-260 &&...
-        matPose(i,3)>-450 && matPose(i,3)<-435
-        continue;
-    end
     idxC = idxC + 1;
 %     ateError(i) = norm(matPose(i,2:3)-matGT(idx{i}(1),2:3));
     Err(i,:) = matPose(i,2:7)-matGT(idx{i}(1),2:7);
     for iE = 1:3
-        Err(i,iE+3) = Err(i,iE+3) - 2*pi*round(Err(i,iE+3)/2/pi);
+        Err(i,iE+3) = 180/pi*(Err(i,iE+3) - 2*pi*round(Err(i,iE+3)/2/pi));
     end
     deltaT = transError(matGT(idx{i}(1),2:7),matPose(i,2:7));
     ateErrorINI(idxC) = norm(deltaT(1:3,4));
@@ -109,47 +79,13 @@ disp("<1.0 %: "+ 100*length(find(ateError < 1.0))/idxC)
 
 figure(1)
 hold on
-plot(matPose(:,2),matPose(:,3));
+plot(matPose(:,2),matPose(:,3),'o');
 plot(matGT(:,2),matGT(:,3));
-legend("LOAM(M)+TM","LOAM(M)","ROLL","G.T.");
+% legend("LOAM(M)+TM","LOAM(M)","ROLL","G.T.");
+legend("fastlio","G.T.");
 xlabel("X (m)");
 ylabel("Y (m)");
 
-figure(2)
-subplot(3,2,1)
-plot(timePose-timePose(1),Err(:,1),'r');
-xlabel("Time (s)");
-ylabel("Error in x (m)");
-subplot(3,2,3)
-plot(timePose-timePose(1),Err(:,2),'r');
-xlabel("Time (s)");
-ylabel("Error in y (m)");
-subplot(3,2,5)
-plot(timePose-timePose(1),Err(:,3),'r');
-xlabel("Time (s)");
-ylabel("Error in z (m)");
-
-subplot(3,2,2)
-plot(timePose-timePose(1),Err(:,4),'r');
-xlabel("Time (s)");
-ylabel("Error in roll (^{\circ})"r');
-subplot(3,2,4)
-plot(timePose-timePose(1),Err(:,5),'r');
-xlabel("Time (s)");
-ylabel("Error in pitch (^{\circ})");
-subplot(3,2,3)
-plot(timePose-timePose(1),Err(:,6),'r');
-xlabel("Time (s)");
-ylabel("Error in yaw (^{\circ})");
-legend("LOAM(M)","LOAM(M)+TM","ROLL");
-
-
-figure(3)
-hold on
-histogram(ateError)
-legend("LOAM(M)","LOAM(M)+TM","ROLL");
-xlabel("Translational distance error");
-ylabel("Count");
 function eT = transError(Vgt,V2)
 % input: x y z r p y
     T1 = eye(4);

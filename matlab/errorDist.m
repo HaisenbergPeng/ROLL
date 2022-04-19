@@ -3,15 +3,16 @@ clear;
 close all
 %% Sometimes the code malfunctions and you will get wierd statistics;
 % don't know why so just reboot the MATLAB
-% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_noTMM";
-folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/fastlio_loc2";
-% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/no_LIO";
-% folder = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/LOAM";
+% folder = "/mnt/sdb/Datasets/NCLT/datasets/fastlio_noTMM";
+folder = "/mnt/sdb/Datasets/NCLT/datasets/fastlio_loc2";
+% folder = "/mnt/sdb/Datasets/NCLT/datasets/no_LIO";
+% folder = "/mnt/sdb/Datasets/NCLT/datasets/LOAM";
 
 date = "2013-02-23";
-logFilePath = folder+"/"+date+"/map_pcd/mappingError.txt";
+dateS = "2013-02-23withDownsamplePC";
+logFilePath = folder+"/"+dateS+"/map_pcd/mappingError.txt";
 % poseFilePath = folder+"/"+date+"/map_pcd/path_mapping.txt";
-poseFilePath = folder+"/"+date+"/map_pcd/path_vinsfusion.txt";
+poseFilePath = folder+"/"+dateS+"/map_pcd/path_vinsfusion.txt";
 % poseFilePath = folder+"/"+date+"/map_pcd/path_fusion.txt";
 gtFilePath = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/"+date+"/groundtruth_"+date+".csv";
 
