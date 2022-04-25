@@ -15,7 +15,7 @@ roll:
   saveKeyframeMapDirectory: /mnt/sdb/Datasets/NCLT/datasets/roll2/2012-02-02/keyframes
   # loadKeyframeMapDirectory:  /mnt/sdb/Datasets/NCLT/datasets/roll2/2012-02-02/keyframes
   # loadKeyframeMapDirectory:  /mnt/sdb/Datasets/NCLT/datasets/fastlio_loc2/2013-01-10/keyframes
-  loadKeyframeMapDirectory: /mnt/sdb/Datasets/NCLT/datasets/roll2/2012-01-15-gt/keyframes
+  loadKeyframeMapDirectory: /mnt/sdb/Datasets/NCLT/datasets/roll/2012-01-15-gt/keyframes 
 
   saveRawCloud: false
   # # temporary mapping mode disabled

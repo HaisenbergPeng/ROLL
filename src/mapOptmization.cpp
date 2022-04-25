@@ -46,6 +46,8 @@ POINT_CLOUD_REGISTER_POINT_STRUCT (PointXYZIRPYT,
 typedef PointXYZIRPYT  PointTypePose;
 typedef geometry_msgs::PoseWithCovarianceStampedConstPtr rvizPoseType;
 
+
+
 // for trajectory alignment
 GlobalOptimization globalEstimator(100);
 
@@ -54,6 +56,13 @@ class mapOptimization : public ParamServer
 {
 
 public:
+    // // time log
+    // ofstream time_log_file(saveMapDirectory);
+    ofstream pose_log_file;
+
+
+    bool debugMode = true;
+
     Eigen::Affine3f lastOdometryPose;
     nav_msgs::Path global_path_gtsam;
 
@@ -240,7 +249,9 @@ public:
 
     mapOptimization()
     {
-
+        pose_log_file.open(saveMapDirectory + "/log.txt");
+        pose_log_file.setf(ios::fixed, ios::floatfield);  // 设定为 fixed 模式，以小数点表示浮点数
+        pose_log_file.precision(6); // 固定小数位6
         // // ISAM2Params parameters;
         // // parameters.relinearizeThreshold = 0.1;
         // // parameters.relinearizeSkip = 1;
@@ -438,6 +449,7 @@ public:
         Eigen::Affine3f affine_imu_to_odom_tmp;
         Eigen::Affine3f affine_imu_to_odom_tmp1;
         odometryMsgToAffine3f(*msgIn, affine_imu_to_odom_tmp1);
+
         // // use raw, motion-skewed clouds
         // affine_imu_to_odom_tmp =affine_imu_to_body*affine_imu_to_odom*affine_lidar_to_imu;
         // use deskewed, imu-centered clouds
@@ -477,9 +489,6 @@ public:
         float odomTmp[6];
         Affine3f2Trans(affine_imu_to_odom_tmp, odomTmp);
         // cout<<"odom message: "<<odomTmp[3]<<" "<< odomTmp[4]<<endl;
-
-
-        
 
         float array_imu_to_map[6];
         Affine3f2Trans(affine_imu_to_map_tmp, array_imu_to_map);
@@ -592,7 +601,8 @@ public:
                 cloudInfoTime = cloudInfoBuffer.front()->header.stamp.toSec();
                 double lidarOdometryTime = lidarOdometryBuffer.front()->header.stamp.toSec();
 
-                // cout<<setiosflags(ios::fixed)<<setprecision(3)<<"cloud time: "<<cloudInfoTime-rosTimeStart<<endl;
+                cout<<setiosflags(ios::fixed)<<setprecision(3)<<"cloud time: "<<cloudInfoTime-rosTimeStart<<endl;
+
                 if (rosTimeStart < 0) rosTimeStart = cloudInfoTime;
 
                 if (abs(lidarOdometryTime - cloudInfoTime) > 0.05) // normally >, so pop one cloud_info msg
@@ -635,18 +645,20 @@ public:
                 {
                     TicToc extract;
                     extractNearby();
-                    // cout<<"extract: "<<extract.toc()<<endl;
+                    
+                    if(debugMode) cout<<"extract: "<<extract.toc()<<endl;
                     TicToc downsample;
                     downsampleCurrentScan();
-                    // cout<<"downsample: "<<downsample.toc()<<endl;
+
+                    if(debugMode) cout<<"downsample: "<<downsample.toc()<<endl;
                     TicToc opt;
                     
                     scan2MapOptimization();
                     
-                    // float optTime = opt.toc();
-                    // cout<<"optimization: "<<optTime<<endl; // > 90% of the total time
+                    float optTime = opt.toc();
+                    if(debugMode)  cout<<"optimization: "<<optTime<<endl; // > 90% of the total time
                     
-                    // TicToc optPose;
+                    TicToc optPose;
                     if (localizationMode)
                     {
                         saveTemporaryKeyframes();
@@ -657,8 +669,8 @@ public:
                         saveKeyFramesAndFactor();
                         correctPoses();
                     }
-                    // float optPoseTime = optPose.toc();
-                    // cout<<"pose opt. takes "<< optPoseTime<<endl;
+                    float optPoseTime = optPose.toc();
+                    if(debugMode)  cout<<"pose opt. takes "<< optPoseTime<<endl;
                     TicToc publish;
                     publishLocalMap();
                     publishOdometry();
@@ -668,7 +680,7 @@ public:
                     // cout<<"publish: "<<publish.toc()<<endl;
                     // printTrans("after mapping: ",transformTobeMapped);
                     mappingTimeVec.push_back(mapping.toc());
-                    // cout<<"mapping time: "<<mappingTimeVec.back()<<endl;
+
                     // ROS_INFO_STREAM("At time "<< cloudInfoTime - rosTimeStart);
                     if (goodToMergeMap)
                     {
@@ -701,6 +713,8 @@ public:
                         goodToMergeMap = false;
                         temporaryMappingMode = false;
                     }
+                    if(debugMode)  cout<<"mapping time: "<<mappingTimeVec.back()<<endl;
+
                 }
 
                
@@ -1038,12 +1052,14 @@ public:
             for (int i=0; i<(int)mappingLogs.size();i++)
             {
                 vector<double> tmp = mappingLogs[i];
-                mapErrorFile<<" "<<tmp[0]<<" "<<tmp[1]<<" "<<tmp[2]<<" "<<tmp[3]<<" "<<tmp[4]<<" " <<tmp[5]<<" " <<tmp[6]<<" " <<tmp[7]<<" " <<tmp[8]<<"\n";
+                for(int j=0;j<(int)tmp.size();j++)
+                    mapErrorFile<<" "<<tmp[i];
+                mapErrorFile<<"\n";
             }
             mapErrorFile.close();
             cout<<"Done saving mapping error file!"<<endl;
         }
-  // saving pose estimates and GPS signals
+        // saving pose estimates and GPS signals
         if (savePose)
         {
             // ofstream pose_file;
@@ -2049,7 +2065,7 @@ public:
                 if (goodToMergeMap) // reset for the frame of merging
                     globalEstimator.resetOptimization(LM.affine_out.matrix().cast<double>());
                 else 
-                    globalEstimator.inputGlobalLocPose(cloudInfoTime, LM.affine_out.matrix().cast<double>(), 0.5, 0.1);             
+                    globalEstimator.inputGlobalLocPose(cloudInfoTime, LM.affine_out.matrix().cast<double>(), 0.6, 0.2);             
                 
                 affine_imu_to_map = LM.affine_out;
                 Affine3f2Trans(affine_imu_to_map,transformTobeMapped);
@@ -2066,17 +2082,13 @@ public:
             tmp.push_back(LM.minEigen); //6
             // tmp.push_back(LM.edgePointCorrNum);
             // tmp.push_back(LM.surfPointCorrNum);
-            float transO2M[6];
-            Affine3f2Trans(affine_odom_to_map, transO2M);
-            tmp.push_back(transO2M[1]); // only need pitch and yaw
-            tmp.push_back(transO2M[2]);
-            tmp.push_back(0);
-            tmp.push_back(0); // why NAN???
-            if (mappingTimeVec.empty())
-                tmp.push_back(0);
-            else
-                tmp.push_back(mappingTimeVec.back()); // mapping time of the last frame
+            // float transO2M[6];
+            // Affine3f2Trans(affine_odom_to_map, transO2M);
+            tmp.push_back(mappingTimeVec.empty()?0:mappingTimeVec.back());
 
+            pose_log_file<<setw(20)<<cloudInfoTime<<" "<<transformTobeMapped[0]<<" "<<transformTobeMapped[1]<<" "<<transformTobeMapped[2]<<" "
+                <<transformTobeMapped[3]<<" "<<transformTobeMapped[4]<<" "<<transformTobeMapped[5]<<" "<<LM.inlier_ratio2<<" "
+                <<tmp.back()<<"\n";
 
             // ROS_INFO_STREAM("error: "<<regiError <<" inlier ratio: "<<  inlier_ratio);
             mappingLogs.push_back( tmp );               
@@ -2567,8 +2579,9 @@ public:
         pubPath.publish(globalPath);
     }
 
-    // ~mapOptimization(){
-    // }
+    ~mapOptimization(){
+        pose_log_file.close();
+    }
 };
 
 

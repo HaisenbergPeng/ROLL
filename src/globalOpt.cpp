@@ -33,6 +33,8 @@
 
 using namespace gtsam;
 
+// keep quaternion input to adapt ceres implementation
+
 GlobalOptimization::GlobalOptimization(int maxNo)
 {
 	initGPS = false;
@@ -231,7 +233,7 @@ void GlobalOptimization::optimize()
             mPoseMap.lock();
 
             int length = localPoseMap.size();
-            // cout<<" pose no. before opt "<< length<<endl;
+            cout<<" pose no. before opt "<< length<<endl;
             map<double, vector<double>>::iterator iterIni,iterLIO, iterLIOnext, iterGlobalLoc;
             iterIni = globalPoseMap.begin();  //using odomTOmap value for initial guess 
             int i = 0;
@@ -286,7 +288,7 @@ void GlobalOptimization::optimize()
                 continue;
             }
 
-            // cout<<"found: "<<found<<endl; // why zero from the start???
+            cout<<"found: "<<found<<endl; // why zero from the start???
             isamTM->update(gtSAMgraphTM, initialEstimateTM);
             isamTM->update();
             isamTM->update();
@@ -295,7 +297,7 @@ void GlobalOptimization::optimize()
 
             isamCurrentEstimateTM = isamTM->calculateEstimate();
 
-            // cout<<"Estimate size: "<<length<<endl;
+            cout<<"Estimate size: "<<length<<endl;
             // update global pose
             iterIni = globalPoseMap.begin();
 
@@ -332,15 +334,18 @@ void GlobalOptimization::optimize()
             // interesting: implementation in gtsam has no need for CC
 
             // Tgl change too much, forfeit this optimization
-            // Eigen::Matrix4d TglDelta = start.inverse()*end;
-            // cout<<"x y z: "<<TglDelta(0,3)<<" "<<TglDelta(1,3)<<" "<<TglDelta(2,3)<<endl;
-            // double deltaTransGL = sqrt(TglDelta(0,3)*TglDelta(0,3) +  TglDelta(1,3)*TglDelta(1,3) + TglDelta(2,3)*TglDelta(2,3) );
-            // if ( deltaTransGL > 0.5)
-            // {
-            //     cout<<"reset when deltaTgl = "<<deltaTransGL<<endl;
-            //     resetOptimization(backupTgl);
-            // }
-            // cout<<"optimization takes: "<<opt_time.toc()<<" ms"<<endl; // gtsam implementation takes less than 10 ms
+            Eigen::Matrix4d TglDelta = start.inverse()*end;
+            cout<<"x y z: "<<TglDelta(0,3)<<" "<<TglDelta(1,3)<<" "<<TglDelta(2,3)<<endl;
+            double deltaTransGL = sqrt(TglDelta(0,3)*TglDelta(0,3) +  TglDelta(1,3)*TglDelta(1,3) + TglDelta(2,3)*TglDelta(2,3) );
+            if ( deltaTransGL > 0.5)
+            {
+                cout<<"reset when deltaTgl = "<<deltaTransGL<<endl;
+                resetOptimization(backupTgl);
+            }
+            double opt_t = opt_time.toc();
+            cout<<"optimization takes: "<<opt_t<<" ms"<<endl; // gtsam implementation usually takes less than 10 ms
+
+            if(opt_t> 100) cout<<"gtsam opt. takes more than 100 ms"<<endl;
 
             mPoseMap.unlock();
         }
