@@ -4,7 +4,7 @@ close all
 %% Sometimes the code malfunctions and you will get wierd statistics;
 % don't know why so just reboot the MATLAB
 % folder = "/mnt/sdb/Datasets/NCLT/datasets/fastlio_noTMM";
-folder = "/mnt/sdb/Datasets/NCLT/datasets/roll2";
+folder = "/mnt/sdb/Datasets/NCLT/datasets/roll";
 % folder = "/mnt/sdb/Datasets/NCLT/datasets/no_LIO";
 % folder = "/mnt/sdb/Datasets/NCLT/datasets/LOAM";
 

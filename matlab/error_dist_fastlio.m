@@ -8,8 +8,8 @@ folder = "/mnt/sdb/Datasets/NCLT/datasets/fastlio_loc2";
 % folder = "/mnt/sdb/Datasets/NCLT/datasets/no_LIO";
 % folder = "/mnt/sdb/Datasets/NCLT/datasets/LOAM";
 
-date = "2012-05-11";
-poseFilePath = "/home/haisenberg/Documents/ROLL/src/FAST_LIO/Log/test0511/pos_log.txt";
+date = "2012-01-15";
+poseFilePath = "/home/haisenberg/Documents/ROLL/src/FAST_LIO/Log/pos_log.txt";
 gtFilePath = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/"+date+"/groundtruth_"+date+".csv";
 
 %% log file reading
@@ -59,7 +59,8 @@ for i=1:lenPose
     idxC = idxC + 1;
 %     ateError(i) = norm(matPose(i,2:3)-matGT(idx{i}(1),2:3));
     Err(i,:) = matPose(i,2:7)-matGT(idx{i}(1),2:7);
-    for iE = 1:3
+    
+    for iE = 1:3 % removing jump
         Err(i,iE+3) = 180/pi*(Err(i,iE+3) - 2*pi*round(Err(i,iE+3)/2/pi));
     end
     deltaT = transError(matGT(idx{i}(1),2:7),matPose(i,2:7));
@@ -79,13 +80,44 @@ disp("<1.0 %: "+ 100*length(find(ateError < 1.0))/idxC)
 
 figure(1)
 hold on
-plot(matPose(:,2),matPose(:,3),'o');
+plot(matPose(:,2),matPose(:,3),'--');
 plot(matGT(:,2),matGT(:,3));
 % legend("LOAM(M)+TM","LOAM(M)","ROLL","G.T.");
 legend("fastlio","G.T.");
 xlabel("X (m)");
 ylabel("Y (m)");
 
+figure(2)
+histogram(ateError);
+
+
+figure(3)
+subplot(3,2,1)
+plot(timePose-timePose(1),Err(:,1),'r');
+xlabel("Time (s)");
+ylabel("Error in x (m)");
+subplot(3,2,3)
+plot(timePose-timePose(1),Err(:,2),'r');
+xlabel("Time (s)");
+ylabel("Error in y (m)");
+subplot(3,2,5)
+plot(timePose-timePose(1),Err(:,3),'r');
+xlabel("Time (s)");
+ylabel("Error in z (m)");
+
+subplot(3,2,2)
+plot(timePose-timePose(1),Err(:,4),'r');
+xlabel("Time (s)");
+ylabel("Error in roll (^{\circ})");
+subplot(3,2,4)
+plot(timePose-timePose(1),Err(:,5),'r');
+xlabel("Time (s)");
+ylabel("Error in pitch (^{\circ})");
+subplot(3,2,6)
+plot(timePose-timePose(1),Err(:,6),'r');
+xlabel("Time (s)");
+ylabel("Error in yaw (^{\circ})");
+% legend("FAST-LIO2(M)","ROLL");
 function eT = transError(Vgt,V2)
 % input: x y z r p y
     T1 = eye(4);

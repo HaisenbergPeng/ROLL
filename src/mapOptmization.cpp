@@ -59,9 +59,7 @@ public:
     // // time log
     // ofstream time_log_file(saveMapDirectory);
     ofstream pose_log_file;
-
-
-    bool debugMode = true;
+    bool debugMode = false;
 
     Eigen::Affine3f lastOdometryPose;
     nav_msgs::Path global_path_gtsam;
@@ -1492,7 +1490,8 @@ public:
         pcl::VoxelGrid<PointType> downSizeFilterGlobalMapKeyFrames; // for global map visualization
         downSizeFilterGlobalMapKeyFrames.setLeafSize(globalMapVisualizationLeafSize, globalMapVisualizationLeafSize, globalMapVisualizationLeafSize); // for global map visualization
         downSizeFilterGlobalMapKeyFrames.setInputCloud(globalMapKeyFrames);
-        downSizeFilterGlobalMapKeyFrames.filter(*globalMapKeyFramesDS);        
+        downSizeFilterGlobalMapKeyFrames.filter(*globalMapKeyFramesDS); 
+        // cout<<globalMapKeyFramesDS->size()<<endl;       
         publishCloud(&pubLidarCloudSurround, globalMapKeyFramesDS, timeLidarInfoStamp, mapFrame);
 
     }
@@ -1850,8 +1849,7 @@ public:
                 }
                 printTrans("Initial: ",transformTobeMapped);
                 globalEstimator.setTgl(affine_odom_to_map.matrix().cast<double>());
-                globalEstimator.inputGlobalLocPose(cloudInfoTime, affine_imu_to_map.matrix().cast<double>(), 0.5, 0.1);
-                
+                globalEstimator.inputGlobalLocPose(cloudInfoTime, affine_imu_to_map.matrix().cast<double>(), 0.5, 0.1);               
                 relocSuccess = true; // only apply to bag testing
                 
             }
@@ -2065,7 +2063,7 @@ public:
                 if (goodToMergeMap) // reset for the frame of merging
                     globalEstimator.resetOptimization(LM.affine_out.matrix().cast<double>());
                 else 
-                    globalEstimator.inputGlobalLocPose(cloudInfoTime, LM.affine_out.matrix().cast<double>(), 0.6, 0.2);             
+                    globalEstimator.inputGlobalLocPose(cloudInfoTime, LM.affine_out.matrix().cast<double>(), 0.5, 0.1);             
                 
                 affine_imu_to_map = LM.affine_out;
                 Affine3f2Trans(affine_imu_to_map,transformTobeMapped);
