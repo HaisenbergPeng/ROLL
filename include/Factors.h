@@ -61,7 +61,7 @@ struct globalTError
 					double t_var, double q_var) 
 	{
 	  return (new ceres::AutoDiffCostFunction<
-	          globalTError, 6, 4, 3>( // residualDim param1Dim1 param1Dim2 param1Dim3...
+	          globalTError, 6, 3, 4>( // residualDim param1Dim1 param1Dim2 param1Dim3...
 	          	new globalTError(t_x, t_y, t_z, q_w, q_x, q_y, q_z, t_var, q_var)));
 	}
 
