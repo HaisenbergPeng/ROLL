@@ -329,10 +329,8 @@ void GlobalOptimization::optimize()
             
 
             // cout<<"Tgl change "<<deltaTransGL<<endl;
-            // w. consistency check
-
-            // interesting: implementation in gtsam has no need for CC
-
+            // w. consistency check: GTSAM implementation needs CC as well
+            // OR the process will just crash without warning (the opt. time takes more than 500 ms)
             // Tgl change too much, forfeit this optimization
             Eigen::Matrix4d TglDelta = start.inverse()*end;
             // cout<<"x y z: "<<TglDelta(0,3)<<" "<<TglDelta(1,3)<<" "<<TglDelta(2,3)<<endl;

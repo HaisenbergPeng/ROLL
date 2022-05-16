@@ -8,19 +8,29 @@ folder = "/mnt/sdb/Datasets/NCLT/datasets/fastlio_loc2";
 % folder = "/mnt/sdb/Datasets/NCLT/datasets/no_LIO";
 % folder = "/mnt/sdb/Datasets/NCLT/datasets/LOAM";
 
-date = "2012-01-15";
-poseFilePath = "/home/haisenberg/Documents/ROLL/src/FAST_LIO/Log/pos_log.txt";
+date = "2012-02-02";
+% sequence = "HKcampus";
+% sequence = "HILTI_Campus1";
+% sequence = "HILTI_uzh_tracking_area_run2";
+sequence = "test0202";
+mkdir(sequence);
+poseFilePath = "/home/haisenberg/Documents/ROLL/src/FAST_LIO/Log/"+sequence+"/mat_out.txt";
 gtFilePath = "/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets/"+date+"/groundtruth_"+date+".csv";
 
 %% log file reading
 fID = fopen(poseFilePath);
 strPattern = "";
-n = 25;
+n = 26;
 for i=1:n
     strPattern = strPattern+"%f";
 end
 logData = textscan(fID,strPattern);
-matPose =[logData{1},logData{5},logData{6},logData{7},logData{2},logData{3},logData{4}];
+matPose =[logData{1},logData{5},logData{6},logData{7},pi/180*logData{2},pi/180*logData{3},pi/180*logData{4}];
+biasG = [logData{17},logData{18},logData{19}];
+biasA = [logData{20},logData{21},logData{22}];
+timePose = (matPose(:,1)-matPose(1,1)); % sec -> sec
+lenPose = length(timePose);
+
 %% gt reading
 % readcsv readmatrix:sth is wrong
 fID3 = fopen(gtFilePath);
@@ -30,21 +40,30 @@ downsample = 10;
 lenGT = length(gtData{1});
 matGT = zeros(floor(lenGT/downsample),7);
 %% ROLL uses imu pose, so here convert body pose to imu pose
-tbi = [-0.11 -0.18 -0.71]';
+%% for original fastlio: zero pose from the start
+trans_i2b = [-0.11 -0.18 -0.71 0 0 0];
+Ti2b = trans2affine(trans_i2b); % right multiply: converts imu frame to body frame of nclt
+Tm2o = eye(4); % left multiply: converts map frame to odom frame
+tmp = zeros(1,7);
 for i=1:floor(lenGT/downsample)
     for j=1:7
-        matGT(i,j) = gtData{2*j-1}(downsample*i);
+        tmp(j) = gtData{2*j-1}(downsample*i);
     end
-    Rmb = eul2rotm([ matGT(i,7),matGT(i,6),matGT(i,5)],"ZYX");
-    tmb = matGT(i,2:4)';
-    tmi = Rmb*tbi +tmb;
-    matGT(i,2:4) = tmi';
+    Tb2m = trans2affine(tmp(2:7));
+    Ti2m = Tb2m*Ti2b;
+    if i==1
+        Tm2o = inv(Ti2m);
+    end
+    Ti2o = Tm2o*Ti2m;
+    
+    % to trans vector
+    matGT(i,2:7) = affine2trans(Ti2o);
+    matGT(i,1) = tmp(1);
 end
 
 %% sync with time
 timeGT = (matGT(:,1)-matGT(1,1))/1e+6; % us -> sec
-timePose = (matPose(:,1)-matPose(1,1)); % sec -> sec
-lenPose = length(timePose);
+
 % MDtimeGT = KDTreeSearcher(timeGT);
 [idx, D] = rangesearch(timeGT,timePose,0.05);
 ateErrorINI = zeros(lenPose,1);
@@ -78,6 +97,7 @@ disp("<0.2 %: "+ 100*length(find(ateError < 0.2))/idxC)
 disp("<0.5 %: "+ 100*length(find(ateError < 0.5))/idxC)
 disp("<1.0 %: "+ 100*length(find(ateError < 1.0))/idxC)
 
+nonZeroIdx = find(Err(:,1)~=0);
 figure(1)
 hold on
 plot(matPose(:,2),matPose(:,3),'--');
@@ -90,34 +110,53 @@ ylabel("Y (m)");
 figure(2)
 histogram(ateError);
 
-
 figure(3)
 subplot(3,2,1)
-plot(timePose-timePose(1),Err(:,1),'r');
+plot(timePose(nonZeroIdx)-timePose(1),Err(nonZeroIdx,1),'r');
 xlabel("Time (s)");
 ylabel("Error in x (m)");
 subplot(3,2,3)
-plot(timePose-timePose(1),Err(:,2),'r');
+plot(timePose(nonZeroIdx)-timePose(1),Err(nonZeroIdx,2),'r');
 xlabel("Time (s)");
 ylabel("Error in y (m)");
 subplot(3,2,5)
-plot(timePose-timePose(1),Err(:,3),'r');
+plot(timePose(nonZeroIdx)-timePose(1),Err(nonZeroIdx,3),'r');
 xlabel("Time (s)");
 ylabel("Error in z (m)");
 
 subplot(3,2,2)
-plot(timePose-timePose(1),Err(:,4),'r');
+plot(timePose(nonZeroIdx)-timePose(1),Err(nonZeroIdx,4),'r');
 xlabel("Time (s)");
 ylabel("Error in roll (^{\circ})");
 subplot(3,2,4)
-plot(timePose-timePose(1),Err(:,5),'r');
+plot(timePose(nonZeroIdx)-timePose(1),Err(nonZeroIdx,5),'r');
 xlabel("Time (s)");
 ylabel("Error in pitch (^{\circ})");
 subplot(3,2,6)
-plot(timePose-timePose(1),Err(:,6),'r');
+plot(timePose(nonZeroIdx)-timePose(1),Err(nonZeroIdx,6),'r');
 xlabel("Time (s)");
 ylabel("Error in yaw (^{\circ})");
-% legend("FAST-LIO2(M)","ROLL");
+% legend("FAST-LIO2","ROLL");
+% 
+% figure(4)
+% plot(timePose-timePose(1),biasA(:,1));
+% hold on
+% plot(timePose-timePose(1),biasA(:,2));
+% plot(timePose-timePose(1),biasA(:,3));
+% legend("X","Y","Z");
+% xlabel("Time (s)");
+% ylabel("Acceleration bias (m^2/s)");
+% saveas(4,sequence+"/AccBias.jpg");
+% figure(5)
+% plot(timePose-timePose(1),biasG(:,1));
+% hold on
+% plot(timePose-timePose(1),biasG(:,2));
+% plot(timePose-timePose(1),biasG(:,3));
+% legend("X","Y","Z");
+% xlabel("Time (s)");
+% ylabel("Gyroscope bias (rad/s)");
+% saveas(5,sequence+"/GyroBias.jpg");
+
 function eT = transError(Vgt,V2)
 % input: x y z r p y
     T1 = eye(4);
@@ -133,4 +172,25 @@ function y = removeJump(x)
     % 2pi
     Ntmp = round(x/360);
     y = x - Ntmp*360;
+end
+
+%% v is a 1x6 vector with [x y z roll pitch yaw]
+function T = trans2affine(v)
+   T = eye(4);
+   if length(v) ~= 6
+       disp("wrong dimension");
+   end
+   T(1:3,1:3) = eul2rotm([v(6),v(5),v(4)],"ZYX");
+   T(1:3,4) = v(1:3)';
+end
+
+%% v is a 1x6 vector with [x y z roll pitch yaw]
+function v = affine2trans(T)
+   v = zeros(1,6);
+   if any(size(T)-4)
+       disp("wrong dimension");
+   end
+   v(1:3) = T(1:3,4)';
+   tmp = rotm2eul(T(1:3,1:3),"ZYX");
+   v(4:6) = [tmp(3),tmp(2),tmp(1)];
 end

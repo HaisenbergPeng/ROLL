@@ -1,15 +1,16 @@
 roll:
   localizationMode: false
-  saveKeyframeMap: false
+  saveKeyframeMap: true
   savePCD: true
   savePose: true # for path recording purposes /reloc gt, save it to saveMapDirectory
-  saveMapDirectory: "/media/binpeng/BIGLUCK/Datasets/Usyd/MAPs/2018-03-16-gps/map_pcd"         
-  saveKeyframeMapDirectory: "/media/binpeng/BIGLUCK/Datasets/Usyd/MAPs/2018-03-16-gps/keyframes" # for relocalization
+  saveMapDirectory: /mnt/sdb/Datasets/Usyd/MAPs/2018-03-08/map_pcd
+  saveKeyframeMapDirectory: /mnt/sdb/Datasets/Usyd/MAPs/2018-03-08/keyframes
   saveRawCloud: false
-  # For reloc: global variables
-  mapLoaded: false
-  relocSuccess: false
-  useOdom: false  
+ 
+
+  useGPS: false #only save them
+  debugMode: false
+  saveLog: true
 
   # gps: only apply to the situation when starting with an good gps-rtk signal like NCLT
   alti0: 46.069
@@ -27,8 +28,9 @@ roll:
   surroundingKeyframeDensity: 2.0               # meters, downsample surrounding keyframe poses   
   surroundingKeyframeSearchRadius: 50.0         # 20 is not okay; meters, within n meters scan-to-map optimization (when loop closure disabled)
   # Topics
-  pointCloudTopic: "velodyne/front/points"               # Point cloud data
-  imuTopic: "imu/data"                         # IMU data
+  # pointCloudTopic: "velodyne/front/points"               # Point cloud data
+  pointCloudTopic: cloud_registered_body
+  imuTopic: imu/data1                         # IMU data
   odomTopic: odom
   gpsTopic: ublox_gps/fix
 
@@ -64,9 +66,9 @@ roll:
   loopClosureEnableFlag: true
   loopClosureFrequency: 1.0                    # Hz, regulate loop closure constraint add frequency
   surroundingKeyframeSize: 50                   # submap size (when loop closure enabled)
-  historyKeyframeSearchRadius: 15.0             # meters, key frame that is within n meters from current pose will be considerd for loop closure
+  historyKeyframeSearchRadius: 50.0             # meters, key frame that is within n meters from current pose will be considerd for loop closure
   historyKeyframeSearchTimeDiff: 30.0           # 30 by default,seconds, key frame that is n seconds older will be considered for loop closure
   historyKeyframeSearchNum: 25                  # number of history key frames will be fused into a submap for loop closure
   # 0.3 by default, but for indoor it can go wrong, actually mostly for good matches, fitnessScore is around 0.03 ;
   #icp threshold, the smaller the better alignment
-  historyKeyframeFitnessScore: 0.2              
+  historyKeyframeFitnessScore: 0.3              

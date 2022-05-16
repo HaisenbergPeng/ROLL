@@ -115,10 +115,10 @@ target_compile_options(${PROJECT_NAME}_mapOptimizationGT  PRIVATE ${OpenMP_CXX_F
 target_link_libraries(${PROJECT_NAME}_mapOptimizationGT  ${catkin_LIBRARIES} ${PCL_LIBRARIES}
                       ${OpenCV_LIBS} ${OpenMP_CXX_FLAGS} ${DBoW3_LIBS} gtsam ${CERES_LIBRARIES})
 
-# lidar odometry
-add_executable(${PROJECT_NAME}_lidarOdometry src/lidarOdometry.cpp)
-add_dependencies(${PROJECT_NAME}_lidarOdometry ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(${PROJECT_NAME}_lidarOdometry ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenMP_CXX_FLAGS} ${OpenCV_LIBS} ${CERES_LIBRARIES})
-target_compile_options(${PROJECT_NAME}_lidarOdometry PRIVATE ${OpenMP_CXX_FLAGS})
+# # lidar odometry
+# add_executable(${PROJECT_NAME}_lidarOdometry src/lidarOdometry.cpp)
+# add_dependencies(${PROJECT_NAME}_lidarOdometry ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
+# target_link_libraries(${PROJECT_NAME}_lidarOdometry ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenMP_CXX_FLAGS} ${OpenCV_LIBS} ${CERES_LIBRARIES})
+# target_compile_options(${PROJECT_NAME}_lidarOdometry PRIVATE ${OpenMP_CXX_FLAGS})
 
 

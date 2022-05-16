@@ -3,12 +3,12 @@ roll:
   saveKeyframeMap: true 
   savePose: true # for path recording purposes /reloc gt, save it to saveMapDirectory
   savePCD: true
-  saveMapDirectory:  "/media/binpeng/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-01-15-gps-fastlio/map_pcd"           
-  saveKeyframeMapDirectory:  "/media/binpeng/BIGLUCK/Datasets/NCLT/datasets/fastlio_mapping/2012-01-15-gps-fastlio/keyframes" # for relocalization
+  saveMapDirectory:  /mnt/sdb/Datasets/NCLT/datasets/roll2/2012-01-15-no-gps/map_pcd           
+  saveKeyframeMapDirectory:  /mnt/sdb/Datasets/NCLT/datasets/roll2/2012-01-15-no-gps/keyframes # for relocalization
   saveRawCloud: false
 
   # initialGuess: [-0.017984725855664, 0.012800135555456, -0.239421644654498, 75.3285, 106.723,-3.231]
-  saveMatchingError: false
+  saveLog: false
   mapLoaded: false
   relocSuccess: false
   useOdom: false  
@@ -71,7 +71,7 @@ roll:
   loopClosureEnableFlag: true
   loopClosureFrequency: 1.0                    # Hz, regulate loop closure constraint add frequency
   surroundingKeyframeSize: 50                   # submap size (when loop closure enabled)
-  historyKeyframeSearchRadius: 15.0             # meters, key frame that is within n meters from current pose will be considerd for loop closure
+  historyKeyframeSearchRadius: 50.0             # meters, key frame that is within n meters from current pose will be considerd for loop closure
   historyKeyframeSearchTimeDiff: 30.0           # 30 by default,seconds, key frame that is n seconds older will be considered for loop closure
   historyKeyframeSearchNum: 25                  # number of hostory key frames will be fused into a submap for loop closure
   # 0.3 by default, but for indoor it can go wrong, actually mostly for good matches, fitnessScore is around 0.03 ;

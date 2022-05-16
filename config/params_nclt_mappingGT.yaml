@@ -13,7 +13,7 @@ roll:
   savePCD: true
   saveRawCloud: false
 
-  saveMatchingError: false
+  saveLog: false
   relocSuccess: false
 
   # Visualization

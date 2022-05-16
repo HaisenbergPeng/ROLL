@@ -34,13 +34,17 @@
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/common/common.h>
 #include <pcl/common/transforms.h>
+
 #include <pcl/registration/icp.h>
+#include <pcl/registration/gicp.h>
+
 #include <pcl/io/pcd_io.h>
 #include <pcl/filters/filter.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/crop_box.h> 
 #include <pcl_conversions/pcl_conversions.h>
 #include<pcl/visualization/pcl_visualizer.h>
+
 
 #include <tf/LinearMath/Quaternion.h>
 #include <tf/transform_listener.h>
@@ -79,6 +83,9 @@ enum class SensorType { VELODYNE, OUSTER, LIVOX};
 class ParamServer
 {
 public:
+    bool debugMode = false;
+    bool useGPS = false;
+
     // gps 
     double alti0;
     double lati0;
@@ -114,7 +121,7 @@ public:
     bool saveKeyframeMap;
     bool saveRawCloud;
     bool mapUpdateEnabled;
-    bool saveMatchingError;
+    bool saveLog;
     string saveMapDirectory;
     string saveKeyframeMapDirectory;
     string loadKeyframeMapDirectory;
@@ -179,6 +186,8 @@ public:
 
     ParamServer()
     {
+        nh.param<bool>("roll/debugMode", debugMode,false);
+
         nh.param<double>("roll/lati0", lati0, 0.0);
         nh.param<double>("roll/longi0", longi0, 0.0);
         nh.param<double>("roll/alti0", alti0, 0.0);
@@ -207,7 +216,7 @@ public:
         nh.param<float>("roll/gpsCovThreshold", gpsCovThreshold, 2.0);
         nh.param<float>("roll/poseCovThreshold", poseCovThreshold, 25.0);
 
-        nh.param<bool>("roll/saveMatchingError", saveMatchingError, true);
+        nh.param<bool>("roll/saveLog", saveLog, true);
         nh.param<bool>("roll/savePCD", savePCD, false);
         nh.param<bool>("roll/savePose", savePose, false);
         nh.param<bool>("roll/saveKeyframeMap", saveKeyframeMap, false);

@@ -8,7 +8,7 @@ roll:
   saveRawCloud: false
 
   initialGuess: [-0.017984725855664, 0.012800135555456, -0.239421644654498, 75.3285, 106.723,-3.231]
-  saveMatchingError: false
+  saveLog: false
   mapLoaded: false
   relocSuccess: false
   useOdom: false  

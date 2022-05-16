@@ -3,7 +3,7 @@ roll:
   saveKeyframeMap: true
   savePCD: true 
   savePose: true # for path recording purposes /reloc gt, save it to saveMapDirectory
-  saveMatchingError: true
+  saveLog: true
   saveMapDirectory: "/media/binpeng/BIGLUCK/Datasets/Usyd/MAPs/2019-04-29/map_pcd"         
   saveKeyframeMapDirectory: "/media/binpeng/BIGLUCK/Datasets/Usyd/MAPs/2019-04-29/keyframes" # for relocalization
   loadKeyframeMapDirectory: "/media/binpeng/BIGLUCK/Datasets/Usyd/MAPs/2018-03-16/keyframes" # for relocalization

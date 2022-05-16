@@ -4,8 +4,6 @@
 
 #include"LOAMmapping.h"
 #include "globalOpt.h"
-
-
 #include <gtsam/geometry/Rot3.h>
 #include <gtsam/geometry/Pose3.h>
 #include <gtsam/slam/PriorFactor.h>
@@ -59,7 +57,8 @@ public:
     // // time log
     // ofstream time_log_file(saveMapDirectory);
     ofstream pose_log_file;
-    bool debugMode = false;
+    float fitnessScore = 0;
+    ofstream gps_file;
 
     Eigen::Affine3f lastOdometryPose;
     nav_msgs::Path global_path_gtsam;
@@ -146,6 +145,8 @@ public:
     ros::Publisher pubPathFusion;
     ros::Publisher pubPathFusionVINS;
 
+    ros::Publisher gpsTrajPub;
+
     ros::Publisher pubHistoryKeyFrames;
     ros::Publisher pubIcpKeyFrames;
     ros::Publisher pubRecentKeyFrames;
@@ -163,7 +164,7 @@ public:
     ros::ServiceServer srvSaveMap;
 
     std::deque<nav_msgs::Odometry> gpsQueue;
-    vector<nav_msgs::Odometry> gpsVec;
+    std::deque<nav_msgs::Odometry> gtQueue;
 
     roll::cloud_info cloudInfo;
     queue<roll::cloud_infoConstPtr> cloudInfoBuffer;
@@ -247,16 +248,25 @@ public:
 
     mapOptimization()
     {
-        pose_log_file.open(saveMapDirectory + "/log.txt");
+        pose_log_file.open(saveMapDirectory + "/global_matching_pose_log.txt");
         pose_log_file.setf(ios::fixed, ios::floatfield);  // 设定为 fixed 模式，以小数点表示浮点数
         pose_log_file.precision(6); // 固定小数位6
+
+
+        gpsTrajPub      = nh.advertise<nav_msgs::Odometry> ("/roll/gps_odom", 1);
+        gps_file.setf(ios::fixed, ios::floatfield);  // 设定为 fixed 模式，以小数点表示浮点数
+        gps_file.precision(6); // 固定小数位6
+        gps_file.open(saveMapDirectory+"/gps.txt",ios::out);
+        if(!gps_file.is_open())
+        {
+            cout<<"Cannot open"<<saveMapDirectory+"/gps.txt"<<endl;
+        }
         // // ISAM2Params parameters;
         // // parameters.relinearizeThreshold = 0.1;
         // // parameters.relinearizeSkip = 1;
         // // isam = new ISAM2(parameters);
 
         pub_global_path_gtsam = nh.advertise<nav_msgs::Path>("global_path_gtsam", 100);
-
         initialpose_sub = nh.subscribe("/initialpose", 1, &mapOptimization::initialpose_callback, this);
 
         pubKeyPosesTmp                 = nh.advertise<sensor_msgs::PointCloud2>("/roll/mapping/tmp_key_poses", 1);
@@ -283,6 +293,8 @@ public:
         subGPS   = nh.subscribe<sensor_msgs::NavSatFix> (gpsTopic, 200, &mapOptimization::gpsHandler, this);
         subGT   = nh.subscribe<nav_msgs::Odometry> (gtTopic, 200, &mapOptimization::gtHandler, this); 
         subLidarOdometry = nh.subscribe<nav_msgs::Odometry> ("/Odometry", 10, &mapOptimization::lidarOdometryHandler,this);
+
+        
 
         srvSaveMap  = nh.advertiseService("/roll/save_map", &mapOptimization::saveMapService, this);
 
@@ -359,6 +371,7 @@ public:
         affine_imu_to_body = pcl::getTransformation(-0.11, -0.18, -0.71, 0.0, 0.0, 0.0);
         affine_lidar_to_body = pcl::getTransformation(0.002, -0.004, -0.957, 0.014084807063594,0.002897246558311,-1.583065991436417);
         affine_gps_to_body = pcl::getTransformation(-0.24, 0,-1.24, 0,0,0);
+
         affine_lidar_to_imu = affine_imu_to_body.inverse()*affine_lidar_to_body;
 
         affine_imu_to_map = Eigen::Affine3f::Identity();
@@ -567,7 +580,6 @@ public:
     void transformUpdate()
     {
         mtx.lock();
-        
         affine_odom_to_map = affine_imu_to_map*affine_imu_to_odom.inverse();
 
         // cout<<"affine_imu_to_map "<<affine_imu_to_map.matrix()<<endl;
@@ -599,7 +611,7 @@ public:
                 cloudInfoTime = cloudInfoBuffer.front()->header.stamp.toSec();
                 double lidarOdometryTime = lidarOdometryBuffer.front()->header.stamp.toSec();
 
-                cout<<setiosflags(ios::fixed)<<setprecision(3)<<"cloud time: "<<cloudInfoTime-rosTimeStart<<endl;
+                if(debugMode) cout<<setiosflags(ios::fixed)<<setprecision(3)<<"cloud time: "<<cloudInfoTime-rosTimeStart<<endl;
 
                 if (rosTimeStart < 0) rosTimeStart = cloudInfoTime;
 
@@ -882,8 +894,7 @@ public:
     {
         if (gpsMsg->status.status != 0 || isnan(gpsMsg->latitude) || isnan(gpsMsg->longitude) || isnan(gpsMsg->altitude)) 
         {
-            cout<<gpsMsg->status.status<<endl;
-            ROS_WARN("Bad gps message!");
+            if(debugMode) cout<<"Bad message, status: "<<gpsMsg->status.status<<endl;
             return;
         }
         // string gpsFrame = "/gps";
@@ -907,7 +918,8 @@ public:
         z = alti0 - gpsMsg->altitude;
 
         Eigen::Affine3f trans_gps_to_gpsM = pcl::getTransformation(x,y,z,0,0,0);
-        Eigen::Affine3f trans_imu_to_map = affine_gps_to_body*trans_gps_to_gpsM*affine_gps_to_body.inverse()*affine_imu_to_body;
+        Eigen::Affine3f trans_imu_to_map = trans_gps_to_gpsM;
+        // Eigen::Affine3f trans_imu_to_map = affine_gps_to_body*trans_gps_to_gpsM*affine_gps_to_body.inverse()*affine_imu_to_body;
         // cout<<"after conversion x y z: "<<trans_imu_to_map(0,3)<<" "<<trans_imu_to_map(1,3)<<" "<<trans_imu_to_map(2,3)<<endl;
         nav_msgs::Odometry odomGPS;
         // notice PoseWithCovariance order: # (x, y, z, rotation about X axis, rotation about Y axis, rotation about Z axis; float64[36] covariance
@@ -923,9 +935,13 @@ public:
         odomGPS.pose.pose.orientation.y = 0;
         odomGPS.pose.pose.orientation.z = 0;
         odomGPS.pose.pose.orientation.w = 1.0;
-        odomGPS.header = gpsMsg->header;
+        odomGPS.header.stamp = gpsMsg->header.stamp;
+        odomGPS.header.frame_id = "/map";
         gpsQueue.push_back(odomGPS);
-        gpsVec.push_back(odomGPS);
+        gpsTrajPub.publish(odomGPS);
+
+        gps_file<<odomGPS.header.stamp.toSec()<<" "<<odomGPS.pose.pose.position.x<<" "<<odomGPS.pose.pose.position.y<<" "<<odomGPS.pose.pose.position.z<<
+            " "<<odomGPS.pose.covariance[0]<<" "<<odomGPS.pose.covariance[7]<<" "<<odomGPS.pose.covariance[14]<<"\n";
     }
 
 
@@ -954,7 +970,7 @@ public:
         gtMsgNew.pose.pose.orientation.y = q.y();
         gtMsgNew.pose.pose.orientation.z = q.z();
         gtMsgNew.pose.pose.orientation.w = q.w();
-        gpsQueue.push_back(gtMsgNew);
+        gtQueue.push_back(gtMsgNew);
     }
 
 
@@ -1035,28 +1051,6 @@ public:
         cout<<"Average time consumed by mapping is :"<<mappingTime/mappingTimeVec.size()<<" ms"<<endl;
         if (localizationMode) cout<<"Times of entering TMM is :"<<TMMcount<<endl;
 
-        if (saveMatchingError)
-        {
-        // saving odometry error
-            string fileName = saveMapDirectory + "/mappingError.txt";
-            ofstream mapErrorFile(fileName);
-            mapErrorFile.setf(ios::fixed, ios::floatfield);  // 设定为 fixed 模式，以小数点表示浮点数
-            mapErrorFile.precision(6); // 固定小数位6
-            if(!mapErrorFile.is_open())
-            {
-                cout<<"Cannot open "<<fileName<<endl;
-                return false;
-            }
-            for (int i=0; i<(int)mappingLogs.size();i++)
-            {
-                vector<double> tmp = mappingLogs[i];
-                for(int j=0;j<(int)tmp.size();j++)
-                    mapErrorFile<<" "<<tmp[i];
-                mapErrorFile<<"\n";
-            }
-            mapErrorFile.close();
-            cout<<"Done saving mapping error file!"<<endl;
-        }
         // saving pose estimates and GPS signals
         if (savePose)
         {
@@ -1168,23 +1162,6 @@ public:
             pose_file4.close();
             cout<<"Trajectory recording finished!"<<endl;
             mtx.unlock();
-
-            // if (gpsVec.empty() == false){
-            //     ofstream gps_file;
-            //     gps_file.open(saveMapDirectory+"/gps.txt",ios::out);
-            //     if(!gps_file.is_open())
-            //     {
-            //         cout<<"Cannot open"<<saveMapDirectory+"/gps.txt"<<endl;
-            //     }
-            //     for (int i = 0; i <int(gpsVec.size()); ++i)
-            //     {
-            //         nav_msgs::Odometry tmp = gpsVec[i];
-            //         gps_file<<tmp.pose.pose.position.x<<" "<<tmp.pose.pose.position.y<<" "<<tmp.pose.pose.position.z<<
-            //          " "<<tmp.pose.covariance[0]<<" "<<tmp.pose.covariance[7]<<" "<<tmp.pose.covariance[14]<<"\n";
-            //     }
-            //     gps_file.close();
-            //     cout<< "GPS data size: "<<gpsVec.size()<<endl;
-            // }
         }
 
 
@@ -1534,44 +1511,48 @@ public:
         // extract cloud
         pcl::PointCloud<PointType>::Ptr cureKeyframeCloud(new pcl::PointCloud<PointType>());
         pcl::PointCloud<PointType>::Ptr prevKeyframeCloud(new pcl::PointCloud<PointType>());
-        {
-            loopFindNearKeyframes(cureKeyframeCloud, loopKeyCur, 0);
-            loopFindNearKeyframes(prevKeyframeCloud, loopKeyPre, historyKeyframeSearchNum);
-            if (cureKeyframeCloud->size() < 300 || prevKeyframeCloud->size() < 1000)
-                return;
-            if (pubHistoryKeyFrames.getNumSubscribers() != 0)
-                publishCloud(&pubHistoryKeyFrames, prevKeyframeCloud, timeLidarInfoStamp, mapFrame);
-        }
+        loopFindNearKeyframes(cureKeyframeCloud, loopKeyCur, 0);
+        loopFindNearKeyframes(prevKeyframeCloud, loopKeyPre, historyKeyframeSearchNum);
+        if (cureKeyframeCloud->size() < 300 || prevKeyframeCloud->size() < 1000)
+            return;
+        if (pubHistoryKeyFrames.getNumSubscribers() != 0)
+            publishCloud(&pubHistoryKeyFrames, prevKeyframeCloud, timeLidarInfoStamp, mapFrame);
 
         // ICP Settings
-        static pcl::IterativeClosestPoint<PointType, PointType> icp;
-        icp.setMaxCorrespondenceDistance(historyKeyframeSearchRadius*2);
-        icp.setMaximumIterations(100);
-        icp.setTransformationEpsilon(1e-6);
-        icp.setEuclideanFitnessEpsilon(1e-6);
-        icp.setRANSACIterations(0);
+        static pcl::IterativeClosestPoint<PointType, PointType> registration;
+        registration.setMaxCorrespondenceDistance(historyKeyframeSearchRadius*2);
+        registration.setMaximumIterations(100);
+        registration.setTransformationEpsilon(1e-6);
+        registration.setEuclideanFitnessEpsilon(1e-6);
+        registration.setRANSACIterations(0);
+
+        // // gicp is way better than icp
+        // static pcl::GeneralizedIterativeClosestPoint<PointType,PointType> registration;
 
         // Align clouds
-        icp.setInputSource(cureKeyframeCloud);
-        icp.setInputTarget(prevKeyframeCloud);
+        registration.setInputSource(cureKeyframeCloud);
+        registration.setInputTarget(prevKeyframeCloud);
         pcl::PointCloud<PointType>::Ptr unused_result(new pcl::PointCloud<PointType>());
-        icp.align(*unused_result);
+        registration.align(*unused_result);
 
-        if (icp.hasConverged() == false || icp.getFitnessScore() > historyKeyframeFitnessScore)
+        fitnessScore = registration.getFitnessScore();
+
+        if (registration.hasConverged() == false ||  fitnessScore > historyKeyframeFitnessScore)
             return;
         
+        if(debugMode) cout<<"found loop, fitness score: "<< fitnessScore<<endl;
         // publish corrected cloud
         if (pubIcpKeyFrames.getNumSubscribers() != 0)
         {
             pcl::PointCloud<PointType>::Ptr closed_cloud(new pcl::PointCloud<PointType>());
-            pcl::transformPointCloud(*cureKeyframeCloud, *closed_cloud, icp.getFinalTransformation());
+            pcl::transformPointCloud(*cureKeyframeCloud, *closed_cloud, registration.getFinalTransformation());
             publishCloud(&pubIcpKeyFrames, closed_cloud, timeLidarInfoStamp, mapFrame);
         }
 
         // Get pose transformation
         float x, y, z, roll, pitch, yaw;
         Eigen::Affine3f correctionLidarFrame;
-        correctionLidarFrame = icp.getFinalTransformation();
+        correctionLidarFrame = registration.getFinalTransformation();
         // transform from world origin to wrong pose
         Eigen::Affine3f tWrong = pclPointToAffine3f(copy_cloudKeyPoses6D->points[loopKeyCur]);
         // transform from world origin to corrected pose
@@ -1580,8 +1561,8 @@ public:
         gtsam::Pose3 poseFrom = Pose3(Rot3::RzRyRx(roll, pitch, yaw), Point3(x, y, z));
         gtsam::Pose3 poseTo = pclPointTogtsamPose3(copy_cloudKeyPoses6D->points[loopKeyPre]);
         gtsam::Vector Vector6(6);
-        float noiseScore = icp.getFitnessScore();
-        Vector6 << noiseScore, noiseScore, noiseScore, noiseScore, noiseScore, noiseScore;
+
+        Vector6 << fitnessScore, fitnessScore, fitnessScore, fitnessScore, fitnessScore, fitnessScore;
         noiseModel::Diagonal::shared_ptr constraintNoise = noiseModel::Diagonal::Variances(Vector6);
 
         // Add pose constraint
@@ -1589,7 +1570,7 @@ public:
         loopIndexQueue.push_back(make_pair(loopKeyCur, loopKeyPre));
         loopPoseQueue.push_back(poseFrom.between(poseTo));
         loopNoiseQueue.push_back(constraintNoise);
-        noiseVec.push_back(noiseScore);
+        noiseVec.push_back(fitnessScore);
         mtx.unlock();
 
         // add loop constriant
@@ -1831,16 +1812,16 @@ public:
         }
 
         // initialization 
-        if (relocSuccess == false)
+        if (localizationMode && relocSuccess == false)
         {
             //  use ground truth for initialization in both modes!
             //  use ground truth all along for building a map
             int tryRuns = 3; // tryRuns = 0 means using initialGuess directly,sometimes gt is too delayed to be used!
             static int count = 0;
-            if (!gpsQueue.empty() && count < tryRuns)
+            if (!gtQueue.empty() && count < tryRuns)
             {
-                odometryMsgToAffine3f(gpsQueue.front(),affine_imu_to_map);
-                gpsQueue.pop_front();
+                odometryMsgToAffine3f(gtQueue.front(),affine_imu_to_map);
+                gtQueue.pop_front();
                 Affine3f2Trans(affine_imu_to_map,transformTobeMapped);
                 affine_odom_to_map = affine_imu_to_map*affine_imu_to_odom.inverse();
                 for(int i=0;i<6;i++)
@@ -1875,6 +1856,10 @@ public:
                 relocSuccess = true;      
             }
             return;          
+        }
+        else
+        {
+            relocSuccess = true;
         }
 
         
@@ -1992,14 +1977,6 @@ public:
 
     void scan2MapOptimization()
     {
-        // no prior map
-        if (cloudKeyPoses3D->empty() && tryReloc == true)
-        {
-            ROS_INFO_STREAM("At time "<< cloudInfoTime - rosTimeStart <<" sec, initialization succeeds!");
-            relocSuccess = true;
-            tryReloc = false;
-            return;
-        }
         // no clouds nearby
         if (cloudKeyPoses3D->empty() || lidarCloudCornerFromMapDS->empty() || lidarCloudSurfFromMapDS->empty())
             return;
@@ -2046,7 +2023,8 @@ public:
             }
             // only correct pose from fastlio when mapping quality is good
             // if (temporaryMappingMode == false && LM.isDegenerate == false)  // worse
-            if (temporaryMappingMode == false) 
+            // when building a map, it is better to fuse LIO and global matching
+            if (temporaryMappingMode == false || localizationMode == false) 
             {
                 // fusion with gtsam 
                 // // TicToc opt_gtsam;
@@ -2070,32 +2048,24 @@ public:
                 // printTrans("trans: ",transformTobeMapped);
             }
      
-            // for recording mapping logs
-            vector<double> tmp;
-            tmp.push_back((double)cloudInfoTime);  //1
-            if (temporaryMappingMode == true) tmp.push_back(1); else tmp.push_back(0);
-            tmp.push_back(LM.inlier_ratio);
-            tmp.push_back(LM.inlier_ratio2);
-            tmp.push_back(LM.regiError);
-            tmp.push_back(LM.minEigen); //6
-            // tmp.push_back(LM.edgePointCorrNum);
-            // tmp.push_back(LM.surfPointCorrNum);
-            // float transO2M[6];
-            // Affine3f2Trans(affine_odom_to_map, transO2M);
-            tmp.push_back(mappingTimeVec.empty()?0:mappingTimeVec.back());
-
-            pose_log_file<<setw(20)<<cloudInfoTime<<" "<<transformTobeMapped[0]<<" "<<transformTobeMapped[1]<<" "<<transformTobeMapped[2]<<" "
-                <<transformTobeMapped[3]<<" "<<transformTobeMapped[4]<<" "<<transformTobeMapped[5]<<" "<<LM.inlier_ratio2<<" "
-                <<tmp.back()<<"\n";
+            if(saveLog)
+            {
+                // for recording mapping logs
+                double mappingTime = mappingTimeVec.empty()?0:mappingTimeVec.back();
+                mtx.lock(); // need lock for fitnessScore
+                pose_log_file<<setw(20)<<cloudInfoTime<<" "<<transformTobeMapped[0]<<" "<<transformTobeMapped[1]<<" "<<transformTobeMapped[2]<<" "
+                    <<transformTobeMapped[3]<<" "<<transformTobeMapped[4]<<" "<<transformTobeMapped[5]<<" "<< LM.inlier_ratio<<" "
+                    <<LM.inlier_ratio2<<" " <<LM.regiError<<" "<<temporaryMappingMode<<" "<<mappingTime<<" "<<fitnessScore<<"\n";
+                mtx.unlock();
+            }
 
             // ROS_INFO_STREAM("error: "<<regiError <<" inlier ratio: "<<  inlier_ratio);
-            mappingLogs.push_back( tmp );               
+              
         } 
         else 
         {
             ROS_WARN("Not enough features! Only %d edge and %d planar features available.", lidarCloudCornerLastDSNum, lidarCloudSurfLastDSNum);
         }
-
     }
 
     void resetISAM(){
@@ -2245,11 +2215,7 @@ public:
 
     void addGPSFactor()
     {
-        if (gpsQueue.empty())
-            return;
-
-        // wait for system initialized and settles down
-        if (cloudKeyPoses3D->empty())
+        if (gpsQueue.empty() || cloudKeyPoses3D->empty() || useGPS == false)
             return;
         else
         {
@@ -2468,6 +2434,11 @@ public:
         transformTobeMapped[3] = latestEstimate.translation().x();
         transformTobeMapped[4] = latestEstimate.translation().y();
         transformTobeMapped[5] = latestEstimate.translation().z();
+
+        affine_imu_to_map = trans2Affine3f(transformTobeMapped);
+        // reset fusion
+        // globalEstimator.resetOptimization(affine_imu_to_map.matrix().cast<double>());
+
         // cout<<"After opt: "<< transformTobeMapped[3]<<endl;
         // save all the received edge and surf points
         pcl::PointCloud<PointType>::Ptr thisCornerKeyFrame(new pcl::PointCloud<PointType>());
@@ -2575,10 +2546,6 @@ public:
         globalPath.header.stamp = timeLidarInfoStamp;
         globalPath.header.frame_id = mapFrame;
         pubPath.publish(globalPath);
-    }
-
-    ~mapOptimization(){
-        pose_log_file.close();
     }
 };
 
