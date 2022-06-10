@@ -54,6 +54,7 @@ class mapOptimization : public ParamServer
 {
 
 public:
+
     // // time log
     // ofstream time_log_file(saveMapDirectory);
     ofstream pose_log_file;
@@ -210,6 +211,7 @@ public:
     
     ros::Time timeLidarInfoStamp;
     double cloudInfoTime;
+
 
     float transformTobeMapped[6];
     
@@ -595,6 +597,7 @@ public:
     }
     void run()
     {
+        ros::Rate matchingRate(0.2);
         while(ros::ok()){ // why while(1) is not okay???
             while (!cloudInfoBuffer.empty() && !lidarOdometryBuffer.empty())
             {
@@ -609,9 +612,10 @@ public:
                 }
 
                 // lower the global matching frequency to speed up
-
                 timeLidarInfoStamp = cloudInfoBuffer.front()->header.stamp;
+
                 cloudInfoTime = cloudInfoBuffer.front()->header.stamp.toSec();
+
                 double lidarOdometryTime = lidarOdometryBuffer.front()->header.stamp.toSec();
 
                 if(debugMode) cout<<setiosflags(ios::fixed)<<setprecision(3)<<"cloud time: "<<cloudInfoTime-rosTimeStart<<endl;
@@ -727,10 +731,10 @@ public:
                         temporaryMappingMode = false;
                     }
                     if(debugMode)  cout<<"mapping time: "<<mappingTimeVec.back()<<endl;
-
+                    matchingRate.sleep();
                 }
 
-               
+             
                 
             }
 
