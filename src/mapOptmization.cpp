@@ -607,6 +607,9 @@ public:
                     mtx.unlock();
                     break;
                 }
+
+                // lower the global matching frequency to speed up
+
                 timeLidarInfoStamp = cloudInfoBuffer.front()->header.stamp;
                 cloudInfoTime = cloudInfoBuffer.front()->header.stamp.toSec();
                 double lidarOdometryTime = lidarOdometryBuffer.front()->header.stamp.toSec();
