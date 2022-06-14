@@ -47,7 +47,7 @@ typedef geometry_msgs::PoseWithCovarianceStampedConstPtr rvizPoseType;
 
 
 // for trajectory alignment
-GlobalOptimization globalEstimator(100);
+GlobalOptimization globalEstimator(500);
 
 
 class mapOptimization : public ParamServer
@@ -597,7 +597,7 @@ public:
     }
     void run()
     {
-        ros::Rate matchingRate(0.2);
+        ros::Rate matchingRate(0.5);
         while(ros::ok()){ // why while(1) is not okay???
             while (!cloudInfoBuffer.empty() && !lidarOdometryBuffer.empty())
             {

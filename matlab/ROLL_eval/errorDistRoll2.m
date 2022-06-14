@@ -4,16 +4,16 @@ close all
 %% Sometimes the code malfunctions and you will get wierd statistics;
 % don't know why so just reboot the MATLAB
 % folder = "/mnt/sdb/Datasets/NCLT/datasets/fastlio_noTMM";
-folder = "/mnt/sdb/Datasets/NCLT/datasets/logs/roll";
+folder = "/mnt/sdb/Datasets/NCLT/datasets/logs/roll2";
 % folder = "/mnt/sdb/Datasets/NCLT/datasets/no_LIO";
 % folder = "/mnt/sdb/Datasets/NCLT/datasets/LOAM";
 
 date = "2012-02-02";
 % dateS = "2013-02-23withDownsamplePC";
-logFilePath = folder+"/"+date+"/map_pcd/mappingError.txt";
+logFilePath = folder+"/"+date+"-0.5HZ/map_pcd/mappingError.txt";
 % poseFilePath = folder+"/"+date+"/map_pcd/path_mapping.txt";
-poseFilePath = folder+"/"+date+"/map_pcd/path_vinsfusion.txt";
-% poseFilePath = folder+"/"+date+"/map_pcd/path_fusion.txt";
+% poseFilePath = folder+"/"+date+"-0.5HZ/map_pcd/path_vinsfusion.txt";
+poseFilePath = folder+"/"+date+"-0.5HZ/map_pcd/path_fusion.txt";
 gtFilePath = "/mnt/sdb/Datasets/NCLT/datasets/ground_truth/groundtruth_"+date+".csv";
 
 

@@ -12,11 +12,11 @@ date = "2012-02-02";
 % sequence = "HKcampus";
 % sequence = "HILTI_Campus1";
 % sequence = "HILTI_uzh_tracking_area_run2";
-sequence = "120202mapping_after_info_filtering";
-% sequence = "120202mapping";
+sequence = "120202mapping";
+% sequence = "120202mapping_after_info_filtering";
 mkdir(sequence);
 poseFilePath = "/home/haisenberg/Documents/ROLL/src/FAST_LIO/Log/"+sequence+"/mat_out.txt";
-timeLogPath = "/home/haisenberg/Documents/ROLL/src/FAST_LIO/Log/"+sequence+"/time_log.txt";
+timeLogPath = "/home/haisenberg/Documents/ROLL/src/FAST_LIO/Log/"+sequence+"/fast_lio_time_log.txt";
 % poseFilePath = "/home/haisenberg/Documents/ROLL/src/FAST_LIO/Log/mat_out.txt";
 gtFilePath = "/mnt/sdb/Datasets/NCLT/datasets/ground_truth/groundtruth_"+date+".csv";
 
@@ -36,16 +36,15 @@ lenPose = length(timePose);
 
 fID2 = fopen(timeLogPath);
 strPattern = "";
-n = 6;
+n = 5;
 for i=1:n
     strPattern = strPattern+"%f";
 end
 logData2 = textscan(fID2,strPattern);
 timeLog = logData2{1};
-timeUpdate = logData2{2}*1000; % ms
-timeFeature = logData2{3}*1000; % ms
-timeSolve = logData2{4}*1000; % maximum 3 iterations: ms
-effPoints = logData2{5};
+timeUpdate = logData2{2};
+timeSolve = logData2{3}*3; 
+effPoints = logData2{4};
 
 
 
@@ -177,28 +176,19 @@ ylabel("Error in yaw (^{\circ})");
 
 figure(6)
 timeLog  = timeLog - timeLog(1);
-subplot(2,2,1)
+subplot(3,1,1)
 plot(timeLog,timeUpdate);
-xlabel("time (s)");
-ylabel("time of kalman update (ms)");
-hold on
-subplot(2,2,2)
-plot(timeLog,timeFeature);
-xlabel("time (s)");
-ylabel("time of feature association (ms)");
-hold on
-subplot(2,2,3)
+xlabel("time");
+ylabel("time of kalman update");
+subplot(3,1,2)
 plot(timeLog,timeSolve);
-xlabel("time (s)");
-ylabel("time of eskf iterations (ms)");
-hold on
-subplot(2,2,4)  
+xlabel("time");
+ylabel("time of eskf iterations");
+subplot(3,1,3)  
 plot(timeLog,effPoints);
-xlabel("time (s)");
+xlabel("time");
 ylabel("Effective points");
-hold on
 
-legend("W.O. info. filtering","W. info. filtering");
 function eT = transError(Vgt,V2)
 % input: x y z r p y
     T1 = eye(4);
