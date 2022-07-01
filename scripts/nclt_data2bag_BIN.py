@@ -29,14 +29,14 @@ from math import sin,cos
 from tqdm import tqdm
 # import scipy
 
-record_time = '2013-02-23'
-root_dir = '/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets'
-save_dir = '/media/haisenberg/BIGLUCK/Datasets/NCLT/datasets'
-ms25_filename = os.path.join(root_dir, record_time,record_time,'ms25.csv')
-ms25E_filename = os.path.join(root_dir, record_time,record_time,'ms25_euler.csv')
-gps_filename = os.path.join(root_dir, record_time,record_time,'gps_rtk.csv')
-velo_bin_path = os.path.join(root_dir, record_time,record_time,"velodyne_hits.bin")
-gt_filename = os.path.join(root_dir,record_time,'groundtruth_'+record_time+'.csv')
+record_time = '2012-01-08'
+root_dir = '/mnt/sdb/Datasets/NCLT/datasets/MISC/2012-01-08/2012-01-08'
+save_dir = root_dir
+ms25_filename = os.path.join(root_dir,'ms25.csv')
+ms25E_filename = os.path.join(root_dir,'ms25_euler.csv')
+gps_filename = os.path.join(root_dir,'gps_rtk.csv')
+velo_bin_path = os.path.join(root_dir,"velodyne_hits.bin")
+gt_filename = os.path.join(root_dir,'groundtruth_'+record_time+'.csv')
 gt_cov_filename = os.path.join(root_dir,record_time,'cov_'+record_time+'.csv')
 velo_frame_id = '/lidar'
 imu_frame_id = '/imu'
@@ -47,16 +47,16 @@ gt_topic = '/ground_truth'
 gps_rtk_topic = '/fix'
 write_lidar_data = True
 if write_lidar_data:
-    bag_name = os.path.join(save_dir, record_time, record_time+'_bin.bag')
+    bag_name = os.path.join(save_dir, record_time+'_bin.bag')
 else:
-    bag_name = os.path.join(save_dir, record_time, record_time+'._no_vel.bag')
+    bag_name = os.path.join(save_dir, record_time+'._no_vel.bag')
 # print(iterable)
 bar = progressbar.ProgressBar()
 bag = rosbag.Bag(bag_name, 'w')
 
 def main():
     # write_gt_cov() 
-
+    
     write_gt() 
     write_gps()
     write_imu()
