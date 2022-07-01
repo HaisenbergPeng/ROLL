@@ -151,18 +151,7 @@ void GlobalOptimization::resetOptimization(Eigen::Matrix4d Tgl)
 {
     // cout<<"too much jump in Tgl change, forfeit estimate:  Tgl change "<<deltaTransGL<<endl;
     WGlobal_T_WLocal = Tgl;
-    // while (globalLocPoseMap.empty() == false)
-    // {
-    //     // should be thread safe
-    //     globalLocPoseMap.erase((globalLocPoseMap.begin())->first);
-    // }
-    // while (localPoseMap.empty() == false)
-    // {
-    //     // should be thread safe
-    //     localPoseMap.erase((localPoseMap.begin())->first);
-    //     globalPoseMap.erase((globalPoseMap.begin())->first);
-    // }
-    // OR
+
     globalLocPoseMap.clear();
     globalPoseMap.clear();
     localPoseMap.clear();

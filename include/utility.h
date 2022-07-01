@@ -83,6 +83,8 @@ enum class SensorType { VELODYNE, OUSTER, LIVOX};
 class ParamServer
 {
 public:
+    float global_matching_rate = 1.0;
+
     bool debugMode = false;
     bool useGPS = false;
 
@@ -186,6 +188,8 @@ public:
 
     ParamServer()
     {
+        nh.param<float>("roll/global_matching_rate", global_matching_rate, 1.0);
+
         nh.param<bool>("roll/debugMode", debugMode,false);
 
         nh.param<double>("roll/lati0", lati0, 0.0);

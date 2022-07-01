@@ -597,7 +597,7 @@ public:
     }
     void run()
     {
-        ros::Rate matchingRate(0.5);
+        ros::Rate matchingRate(global_matching_rate);
         while(ros::ok()){ // why while(1) is not okay???
             while (!cloudInfoBuffer.empty() && !lidarOdometryBuffer.empty())
             {
