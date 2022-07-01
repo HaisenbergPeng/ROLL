@@ -5,7 +5,7 @@ ROLL is a LiDAR-based algorithm that can provide robust and accurate localizatio
 * We propose a robust LOAM-based global matching module incorporating temporary mapping, which can prevent localization failures in areas with significant scene changes or insufficient map coverings. The temporary map can be merged onto the global map once matching is reliable again.
 * We extend a fusion scheme to trajectories from LIO and noisy global matching. By implementing a consistency check on the derived odometry drift, we successfully prevent the optimization results from going out of bounds.
 
-Related paper: [ROLL: Long-Term Robust LiDAR-based Localization With Temporary Mapping in Changing Environments](https://arxiv.org/abs/2203.03923)
+Related paper: [ROLL: Long-Term Robust LiDAR-based Localization With Temporary Mapping in Changing Environments](https://arxiv.org/abs/2203.03923). 
 The paper is now accepted by IROS 2022
 
 ## 2. Prerequisites
