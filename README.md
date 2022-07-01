@@ -13,7 +13,7 @@ The paper is now accepted by IROS 2022
 * PCL 1.7
 * Eigen 3.3.7
 * GTSAM 4.0.2 (-DGTSAM_BUILD_WITH_MARCH_NATIVE = OFF)
-* Ceres 2.0
+* Ceres 2.0 (It is optional since now the pose graph optimization is performed with GTSAM)
 
 
 ## 3. Build
