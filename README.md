@@ -61,7 +61,8 @@ rosbag play <root_dir>/2012-01-08_bin.bag --clock
 ```
 
 4. Localization test
-By default, the algorithm will get the initial pose from topic "ground_truth". If it cannot get such a topic,
+
+    By default, the algorithm will get the initial pose from topic "ground_truth". If it cannot get such a topic,
  it load initial pose from variable "initialGuess".
 ```
 roslaunch roll loc_nclt.launch
