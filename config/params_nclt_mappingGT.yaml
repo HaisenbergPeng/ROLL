@@ -1,8 +1,8 @@
 roll:
-  localizationMode: true # for testing 'GT' accuracy
+  localizationMode: false # for testing 'GT' accuracy
   saveMapDirectory:  "/mnt/sdb/Datasets/NCLT/datasets/fastlio_loc2/2012-02-02-gt/map_pcd"           
   saveKeyframeMapDirectory:  "/mnt/sdb/Datasets/NCLT/datasets/fastlio_loc2/2012-02-02-gt/keyframes" 
-  loadKeyframeMapDirectory:  "/mnt/sdb/Datasets/NCLT/datasets/fastlio_loc2/2012-01-15-gt/keyframes" 
+  loadKeyframeMapDirectory:  "/mnt/sdb/Datasets/NCLT/datasets/fastlio_loc2/2012-02-02-gt/keyframes" 
 
   saveKeyframeMap: false 
   savePose: false # for path recording purposes /reloc gt, save it to saveMapDirectory

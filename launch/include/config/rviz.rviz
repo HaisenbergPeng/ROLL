@@ -476,7 +476,7 @@ Visualization Manager:
           Color: 255; 255; 255
           Color Transformer: Intensity
           Decay Time: 0
-          Enabled: false
+          Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Max Intensity: 15.099363327026367
@@ -493,7 +493,7 @@ Visualization Manager:
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
-          Value: false
+          Value: true
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
@@ -506,12 +506,12 @@ Visualization Manager:
           Color: 0; 85; 0
           Color Transformer: Intensity
           Decay Time: 0
-          Enabled: false
+          Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
-          Max Intensity: 30.100000381469727
+          Max Intensity: 28.09857749938965
           Min Color: 0; 0; 0
-          Min Intensity: 0.00020884780678898096
+          Min Intensity: 8.023604393005371
           Name: Map (global)
           Position Transformer: XYZ
           Queue Size: 10
@@ -523,7 +523,7 @@ Visualization Manager:
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
-          Value: false
+          Value: true
         - Alpha: 1
           Buffer Length: 1
           Class: rviz/Path
@@ -562,7 +562,7 @@ Visualization Manager:
           Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
-          Max Intensity: 1317
+          Max Intensity: 0
           Min Color: 0; 0; 0
           Min Intensity: 0
           Name: key_poses
@@ -796,16 +796,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 974.56005859375
+      Distance: 187.73538208007812
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -106.87281799316406
-        Y: -11.260660171508789
-        Z: -35.69236373901367
+        X: 10.460739135742188
+        Y: 4.423838138580322
+        Z: -17.89137840270996
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false

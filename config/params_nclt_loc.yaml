@@ -2,15 +2,16 @@ roll:
   debugMode: false
   localizationMode: true
   mapUpdateEnabled: true
-  saveKeyframeMap: true
-  savePCD: true
-  savePose: true # for path recording purposes /reloc gt, save it to saveMapDirectory
-  saveLog: true
-  #only test
+
   # saveKeyframeMap: true
-  # savePCD: false
-  # savePose: false # for path recording purposes /reloc gt, save it to saveMapDirectory
-  # saveLog: false
+  # savePCD: true
+  # savePose: true # for path recording purposes /reloc gt, save it to saveMapDirectory
+  # saveLog: true
+  # only test
+  saveKeyframeMap: true
+  savePCD: false
+  savePose: false # for path recording purposes /reloc gt, save it to saveMapDirectory
+  saveLog: false
 
   saveMapDirectory:  /mnt/sdb/Datasets/NCLT/datasets/logs/roll2/2012-02-02-0.5HZ/map_pcd        
   saveKeyframeMapDirectory: /mnt/sdb/Datasets/NCLT/datasets/logs/roll2/2012-02-02-0.5HZ/keyframes
