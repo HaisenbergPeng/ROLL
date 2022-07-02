@@ -32,11 +32,11 @@ cd ../.. && catkin_make
 
     Change the variables "record_time" and "root_dir", and arrange files in directory "root_dir" as following:
 ```
-├── cov_2012-01-08.csv
+├── cov_2012-01-15.csv
 ├── gps.csv
 ├── gps_rtk.csv
 ├── gps_rtk_err.csv
-├── groundtruth_2012-01-08.csv
+├── groundtruth_2012-01-15.csv
 ├── kvh.csv
 ├── ms25.csv
 ├── ms25_euler.csv
@@ -52,12 +52,12 @@ cd ../.. && catkin_make
 cd src/scripts
 python nclt_data2bag_BIN.py
 ```
-Then a rosbag named "2012-01-08_bin.bag" will be generated.
+Then a rosbag named "2012-01-15_bin.bag" will be generated.
 
 3. Building a map with NCLT ground truth
 ```
 roslaunch roll GTmapping_nclt.launch
-rosbag play <root_dir>/2012-01-08_bin.bag --clock
+rosbag play <root_dir>/2012-01-15_bin.bag --clock
 ```
 
 4. Localization test
