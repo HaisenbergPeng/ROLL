@@ -1,5 +1,5 @@
-clc
-clear;
+% clc
+% clear;
 close all
 %% Sometimes the code malfunctions and you will get wierd statistics;
 % don't know why so just reboot the MATLAB
@@ -7,9 +7,10 @@ close all
 folder = "/mnt/sdb/Datasets/NCLT/datasets/logs/roll";
 % folder = "/mnt/sdb/Datasets/NCLT/datasets/no_LIO";
 % folder = "/mnt/sdb/Datasets/NCLT/datasets/LOAM";
+% folder = "/mnt/sdb/Datasets/NCLT/datasets/logs/fastlio_noEdge";
 
 date = "2012-02-02";
-% dateS = "2013-02-23withDownsamplePC";
+% dateS = "2013-02-23";
 logFilePath = folder+"/"+date+"/map_pcd/mappingError.txt";
 % poseFilePath = folder+"/"+date+"/map_pcd/path_mapping.txt";
 poseFilePath = folder+"/"+date+"/map_pcd/path_vinsfusion.txt";

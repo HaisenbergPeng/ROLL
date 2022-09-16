@@ -266,7 +266,7 @@ class LOAMmapping : public ParamServer
                 float pb = matX0(1, 0);
                 float pc = matX0(2, 0);
                 float pd = 1;
-
+ 
                 float ps = sqrt(pa * pa + pb * pb + pc * pc);
                 pa /= ps; pb /= ps; pc /= ps; pd /= ps;
 

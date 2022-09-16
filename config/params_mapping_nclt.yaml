@@ -3,8 +3,8 @@ roll:
   saveKeyframeMap: true 
   savePose: true # for path recording purposes /reloc gt, save it to saveMapDirectory
   savePCD: true
-  saveMapDirectory:  /mnt/sdb/Datasets/NCLT/datasets/roll2/2012-01-15-no-gps/map_pcd11111           
-  saveKeyframeMapDirectory:  /mnt/sdb/Datasets/NCLT/datasets/roll2/2012-01-15-no-gps/keyframes1111 # for relocalization
+  saveMapDirectory:  /mnt/sdb/Datasets/NCLT/datasets/roll2/2012-01-15-no-gps/map_pcd           
+  saveKeyframeMapDirectory:  /mnt/sdb/Datasets/NCLT/datasets/roll2/2012-01-15-no-gps/keyframes # for relocalization
   saveRawCloud: false
 
   # initialGuess: [-0.017984725855664, 0.012800135555456, -0.239421644654498, 75.3285, 106.723,-3.231]

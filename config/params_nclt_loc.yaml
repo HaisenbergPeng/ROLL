@@ -1,3 +1,4 @@
+use_sim_time: true
 roll:
   debugMode: false
   localizationMode: true
@@ -13,26 +14,27 @@ roll:
   savePose: false # for path recording purposes /reloc gt, save it to saveMapDirectory
   saveLog: false
 
-  saveMapDirectory:  /mnt/sdb/Datasets/NCLT/datasets/logs/roll2/2012-02-02-0.5HZ/map_pcd        
-  saveKeyframeMapDirectory: /mnt/sdb/Datasets/NCLT/datasets/logs/roll2/2012-02-02-0.5HZ/keyframes
-  loadKeyframeMapDirectory: /mnt/sdb/Datasets/NCLT/datasets/logs/roll/2012-01-15-gt/keyframes 
+  saveMapDirectory:  /mnt/sdb/Datasets/NCLT/datasets/logs/fastlio_noEdge/2012-03-17/map_pcd        
+  saveKeyframeMapDirectory: /mnt/sdb/Datasets/NCLT/datasets/logs/fastlio_noEdge/2012-03-17/keyframes
+  loadKeyframeMapDirectory: /mnt/sdb/Datasets/NCLT/datasets/logs/roll/2012-02-02/keyframes 
 
   saveRawCloud: false
   # # temporary mapping mode disabled
   # startTemporaryMappingInlierRatioThre: 0.0
-# temporary mapping mode 
+  # temporary mapping mode 
   startTemporaryMappingInlierRatioThre: 0.3
   exitTemporaryMappingInlierRatioThre: 0.5
   slidingWindowSize: 30
-  global_matching_rate: 1.0
+  
+  globalMatchingRate: 5
 
   alti0: 270.0
   lati: 42.293227
   longi0: -83.709657
 
   # initialGuess: [-0.023064531, 0.006521815, -0.123438711, 75.34987256, 108.1539385, -3.290657831] # 20120115
-  initialGuess: [-0.017984725855664, 0.012800135555456, -0.239421644654498,  75.520827533362393, 108.443935840162752, -3.291299069412723] # 20120202
-  # initialGuess: [0.020559761872303, -0.000903047757892, -1.070181276478803, 75.579787639477303, 108.841026421505774, -3.316757230658669] # 20120317
+  # initialGuess: [-0.017984725855664, 0.012800135555456, -0.239421644654498,  75.520827533362393, 108.443935840162752, -3.291299069412723] # 20120202
+  initialGuess: [0.020559761872303, -0.000903047757892, -1.070181276478803, 75.579787639477303, 108.841026421505774, -3.316757230658669] # 20120317
   # initialGuess: [-0.015404291345797, -0.000618447067820, -0.312421191243955, 76.181700539534063, 108.837027977442645, -3.266038226333669] # 20120429
   # initialGuess: [0.019280939, 0.004926005, -1.755148225, -1.126196628, -3.182984251, 0.737359681] #20120511
   # initialGuess: [-0.054502938206381, -0.025535463484375, -0.192617339278269,88.661994612088748, 65.113330292655192, -2.807224100861569] #20120615

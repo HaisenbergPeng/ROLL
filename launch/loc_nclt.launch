@@ -1,7 +1,7 @@
 <launch>
 
     <arg name="project" default="roll"/>
-    <param name="use_sim_time" value="true" /> 
+
     <node pkg="tf" type="static_transform_publisher" name="map2odom" args="0 0 0 0 0 0 /map /odom 100" /> 
     <!-- Parameters -->
     <rosparam file="$(find roll)/config/params_nclt_loc.yaml" command="load" />

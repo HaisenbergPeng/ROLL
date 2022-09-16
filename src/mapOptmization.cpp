@@ -254,7 +254,6 @@ public:
         pose_log_file.setf(ios::fixed, ios::floatfield);  // 设定为 fixed 模式，以小数点表示浮点数
         pose_log_file.precision(6); // 固定小数位6
 
-
         gpsTrajPub      = nh.advertise<nav_msgs::Odometry> ("/roll/gps_odom", 1);
         gps_file.setf(ios::fixed, ios::floatfield);  // 设定为 fixed 模式，以小数点表示浮点数
         gps_file.precision(6); // 固定小数位6
@@ -597,7 +596,7 @@ public:
     }
     void run()
     {
-        ros::Rate matchingRate(global_matching_rate);
+        ros::Rate matchingRate(globalMatchingRate);
         while(ros::ok()){ // why while(1) is not okay???
             while (!cloudInfoBuffer.empty() && !lidarOdometryBuffer.empty())
             {
@@ -656,6 +655,7 @@ public:
                 mtx.unlock();
 
                 TicToc mapping;
+                
                 updateInitialGuess(); // actually the same as ALOAM
 
                 if (tryReloc == true || relocSuccess == true)
