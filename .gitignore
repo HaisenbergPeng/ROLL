@@ -2,7 +2,7 @@ scripts/MISC
 src/MISC
 launch/MISC
 config/MISC
-matlab/results
+matlab/MISC
 # Prerequisites
 *.d
 
